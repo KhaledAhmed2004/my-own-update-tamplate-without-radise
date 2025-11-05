@@ -52,6 +52,20 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
         message: 'Your session has expired. Please log in again to continue.',
       },
     ];
+  } else if (error instanceof Error && error.message === 'Not allowed by CORS') {
+    statusCode = StatusCodes.FORBIDDEN;
+    const origin = String(req.headers.origin || 'undefined');
+    message = 'CORS blocked: origin not allowed';
+    errorMessages = [
+      {
+        path: 'Origin',
+        message: `'${origin}' is not permitted by CORS policy. Add it to allowed origins or ensure the request includes the correct Origin header.`,
+      },
+    ];
+    try {
+      res.setHeader('X-CORS-Blocked', '1');
+      res.setHeader('Vary', 'Origin');
+    } catch {}
   } else if (error instanceof ApiError) {
     statusCode = error.statusCode;
     message = error.message;

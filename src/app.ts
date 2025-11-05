@@ -7,10 +7,11 @@ import { StatusCodes } from 'http-status-codes';
 import express, { Request, Response } from 'express';
 import cookieParser from 'cookie-parser';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
-import './config/passport';
+// import './config/passport';
 import { requestLogger } from './app/middlewares/requestLogger';
 import path from 'path';
 import passport from 'passport';
+import { logger, errorLogger } from './shared/logger';
 
 const app = express();
 
@@ -43,20 +44,45 @@ const allowedOrigins = [
   'http://127.0.0.1:5000',
   'http://127.0.0.1:5001',
   'http://10.10.7.33:5001',
+  // Dev server alternate ports
+  'http://localhost:5003',
+  'http://127.0.0.1:5003',
+  'http://localhost:5005',
+  'http://127.0.0.1:5005',
 ];
+
+// CORS debug logging (rate-limited) — enable with env CORS_DEBUG=true
+const CORS_DEBUG = String(process.env.CORS_DEBUG || '').toLowerCase() === 'true' || process.env.CORS_DEBUG === '1';
+const corsLogMap = new Map<string, number>();
+const CORS_LOG_WINDOW_MS = 60_000; // log at most once per origin per minute
+const maybeLogCors = (origin: string | undefined, allowed: boolean) => {
+  if (!CORS_DEBUG) return;
+  const key = origin || 'no-origin';
+  const now = Date.now();
+  const last = corsLogMap.get(key) || 0;
+  if (now - last < CORS_LOG_WINDOW_MS) return;
+  corsLogMap.set(key, now);
+  if (!origin) {
+    logger.info('CORS allow: request without Origin header (Postman/mobile/native)');
+    return;
+  }
+  if (allowed) logger.info(`CORS allow: ${origin}`);
+  else errorLogger.warn(`CORS block: ${origin}`);
+};
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      console.log('🔍 CORS Origin Check:', origin);
       // Allow requests with no origin (like mobile apps, Postman)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        maybeLogCors(origin, true);
+        return callback(null, true);
+      }
       if (allowedOrigins.includes(origin)) {
-        console.log('✅ Origin allowed:', origin);
+        maybeLogCors(origin, true);
         callback(null, true);
       } else {
-        console.log('❌ Origin blocked:', origin);
-        console.log('📋 Allowed origins:', allowedOrigins);
+        maybeLogCors(origin, false);
         callback(new Error('Not allowed by CORS'));
       }
     },

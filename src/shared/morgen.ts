@@ -14,12 +14,18 @@ const successResponseFormat = `${getIpFormat()}:method :url :status - :response-
 const errorResponseFormat = `${getIpFormat()}:method :url :status - :response-time ms`;
 
 const successHandler = morgan(successResponseFormat, {
-  skip: (req: Request, res: Response) => res.statusCode >= 400,
+  skip: (req: Request, res: Response) => {
+    const isObservability = Boolean(req.originalUrl?.includes('/api/v1/observability'));
+    return res.statusCode >= 400 || isObservability;
+  },
   stream: { write: (message: string) => logger.info(message.trim()) },
 });
 
 const errorHandler = morgan(errorResponseFormat, {
-  skip: (req: Request, res: Response) => res.statusCode < 400,
+  skip: (req: Request, res: Response) => {
+    const isObservability = Boolean(req.originalUrl?.includes('/api/v1/observability'));
+    return res.statusCode < 400 || isObservability;
+  },
   stream: { write: (message: string) => errorLogger.error(message.trim()) },
 });
 

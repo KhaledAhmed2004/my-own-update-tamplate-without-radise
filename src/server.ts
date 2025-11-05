@@ -7,10 +7,22 @@ import { socketHelper } from './helpers/socketHelper';
 import { errorLogger, logger, notifyCritical } from './shared/logger';
 import { CacheHelper } from './app/shared/CacheHelper';
 
-//uncaught exception
+// uncaught exception — ensure server closes before exit to avoid EADDRINUSE on respawn
 process.on('uncaughtException', error => {
-  errorLogger.error('UnhandleException Detected', error);
-  process.exit(1);
+  errorLogger.error('UncaughtException Detected', error);
+  if (server && typeof server.close === 'function') {
+    try {
+      server.close(() => {
+        // small delay so OS can release the port cleanly
+        setTimeout(() => process.exit(1), 500);
+      });
+    } catch (e) {
+      // fallback if close throws
+      setTimeout(() => process.exit(1), 500);
+    }
+  } else {
+    process.exit(1);
+  }
 });
 
 let server: any;
@@ -29,11 +41,32 @@ async function main() {
     //Seed Super Admin after database connection is successful
     await seedSuperAdmin();
 
-    const port =
-      typeof config.port === 'number' ? config.port : Number(config.port);
+    const port = Number(config.port) || 5001;
+    const host =
+      config.node_env === 'development'
+        ? '0.0.0.0'
+        : (config.ip_address && String(config.ip_address).trim()) || '0.0.0.0';
 
-    server = app.listen(port, config.ip_address as string, () => {
-      logger.info(`♻️ Application listening on port:${config.port}`);
+    server = app.listen(port, host, () => {
+      logger.info(`♻️ Application listening on ${host}:${port}`);
+    });
+    // handle listen errors gracefully
+    server.on('error', (err: any) => {
+      if (err && err.code === 'EADDRINUSE') {
+        errorLogger.error(`⚠️ Port in use ${host}:${port} (EADDRINUSE)`);
+        // attempt a graceful retry after closing
+        try {
+          server.close(() => {
+            setTimeout(() => {
+              server = app.listen(port, host, () => {
+                logger.info(`♻️ Re-listened on ${host}:${port} after EADDRINUSE`);
+              });
+            }, 1000);
+          });
+        } catch (closeErr) {
+          errorLogger.error('Failed to close server after EADDRINUSE', closeErr as any);
+        }
+      }
     });
 
     // Initialize CacheHelper (in-memory)

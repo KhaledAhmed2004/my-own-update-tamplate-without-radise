@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import colors from 'colors';
 import { logger, errorLogger } from '../../shared/logger';
+import LogBuffer from '../observability/logBuffer';
 import config from '../../config';
 
 // 🗓️ Format date
@@ -228,6 +229,8 @@ export const requestLogger = (
     const ms = Date.now() - start;
     const status = res.statusCode;
     const statusMsg = statusText(status);
+    // Silence console logs for observability endpoints to avoid terminal spam
+    const isObservabilityRoute = Boolean(req.originalUrl?.includes('/api/v1/observability'));
 
     const details = {
       params: req.params || {},
@@ -350,8 +353,27 @@ export const requestLogger = (
     lines.push(colors.magenta.bold(`⏱️ Processed in ${ms}ms`));
 
     const formatted = lines.join('\n');
-    if (status >= 400) errorLogger.error(formatted);
-    else logger.info(formatted);
+    if (!isObservabilityRoute) {
+      if (status >= 400) errorLogger.error(formatted);
+      else logger.info(formatted);
+    }
+
+    // 📦 Push to in-memory log buffer for observability API
+    try {
+      LogBuffer.getInstance().push({
+        time: Date.now(),
+        level: status >= 400 ? 'error' : 'info',
+        status,
+        method: req.method,
+        url: req.originalUrl,
+        ip: getClientIp(req),
+        ms,
+        isWebhook: isStripeWebhook(req),
+        message: formatted,
+      });
+    } catch {
+      // noop
+    }
   });
 
   next();

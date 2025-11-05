@@ -112,3 +112,19 @@ Explain how to run the automated tests for this system.
 ```bash
 npm test
 ```
+## CORS Debugging
+
+To diagnose cross-origin issues without noisy logs, you can enable compact, rate-limited CORS diagnostics:
+
+- Set `CORS_DEBUG=true` (or `1`) in your environment.
+- The server logs one decision per origin per minute: allow or block.
+- Blocked requests return `403` with a structured message and headers `X-CORS-Blocked: 1` and `Vary: Origin`.
+
+Example (PowerShell):
+
+```
+$env:CORS_DEBUG = 'true'
+npm run dev
+```
+
+If you see a block, add the frontend URL to `allowedOrigins` in `src/app.ts` or move it to a config-driven list.

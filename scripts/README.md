@@ -125,3 +125,37 @@ postman-collections/
 - Environment variables এর default values পরিবর্তন করতে পারেন  
 - Request headers customize করতে পারেন
 - Authentication logic পরিবর্তন করতে পারেন
+
+## Monitor
+
+টার্মিনাল-ভিত্তিক real-time API monitor চালাতে এবং কনফিগার করতে এই সেকশন ব্যবহার করুন।
+
+### রান
+
+```bash
+npm run monitor
+# অথবা
+node scripts/monitor.js
+```
+
+### কনফিগারেশন (কেন্দ্রীভূত)
+
+- ফাইল: `scripts/monitor.config.js`
+  - `API_BASE`: Observability base URL (ডিফল্ট `http://127.0.0.1:5001/api/v1/observability`)
+  - `LOGS_URL`: Logs endpoint (ডিফল্ট `${API_BASE}/logs?limit=200`)
+  - `METRICS_URL`: Metrics endpoint (ডিফল্ট ফাঁকা → লোকাল)
+  - `POLL_MS`: Poll interval ms (ডিফল্ট `0` → disabled)
+
+Environment variables দিয়ে override করতে পারেন:
+
+```bash
+$env:MONITOR_API_BASE_URL='http://127.0.0.1:5001/api/v1/observability'
+$env:MONITOR_LOGS_URL='http://127.0.0.1:5001/api/v1/observability/logs?limit=200'
+$env:MONITOR_METRICS_URL='http://127.0.0.1:5001/api/metrics'
+$env:MONITOR_POLL_MS='10000'  # Enable auto-refresh every 10s (override default 0)
+```
+
+### আচরণ
+
+- UI তে নিজস্ব `/observability` ট্রাফিক লুকানো থাকে (`scripts/monitor.utils.js`).
+- API অফলাইনে থাকলে `OFFLINE` দেখায়, কোনো demo লগ দেখায় না।
