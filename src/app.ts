@@ -1,5 +1,8 @@
 import cors from 'cors';
 import YAML from 'yamljs';
+// Ensure DB metrics plugin loads BEFORE any models compile
+import './app/observability/mongooseMetrics';
+import './app/middlewares/autoLabelBootstrap';
 import router from './routes';
 import { Morgan } from './shared/morgen';
 import swaggerUi from 'swagger-ui-express';
@@ -7,11 +10,13 @@ import { StatusCodes } from 'http-status-codes';
 import express, { Request, Response } from 'express';
 import cookieParser from 'cookie-parser';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
+import { requestContextInit } from './app/middlewares/requestContext';
 // import './config/passport';
 import { requestLogger } from './app/middlewares/requestLogger';
 import path from 'path';
 import passport from 'passport';
 import { logger, errorLogger } from './shared/logger';
+// autoLabelBootstrap moved above router import to ensure controllers are wrapped before route binding
 
 const app = express();
 
@@ -122,6 +127,8 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 // Request/Response logging
+// Initialize request-scoped context BEFORE logging
+app.use(requestContextInit);
 app.use(requestLogger);
 
 // Static files

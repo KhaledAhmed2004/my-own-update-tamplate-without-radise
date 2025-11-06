@@ -1,5 +1,6 @@
 import NodeCache from 'node-cache';
 import { logger, errorLogger } from '../../shared/logger';
+import { recordCacheHit, recordCacheMiss } from '../middlewares/requestContext';
 
 export interface ICacheOptions {
   ttl?: number; // Time to live in seconds
@@ -61,6 +62,9 @@ export class CacheHelper {
           Date.now() - start
         }ms`
       );
+      const dur = Date.now() - start;
+      if (res !== undefined) recordCacheHit(dur);
+      else recordCacheMiss(dur);
       return res;
     } catch (err) {
       errorLogger.error(
@@ -68,7 +72,11 @@ export class CacheHelper {
           Date.now() - start
         }ms`
       );
-      return this.cache.get<T>(key);
+      const fallback = this.cache.get<T>(key);
+      const dur = Date.now() - start;
+      if (fallback !== undefined) recordCacheHit(dur);
+      else recordCacheMiss(dur);
+      return fallback;
     }
   }
 

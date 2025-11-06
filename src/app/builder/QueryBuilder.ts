@@ -1,4 +1,5 @@
 import { FilterQuery, Query } from 'mongoose';
+import { recordDbQuery } from '../middlewares/requestContext';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 class QueryBuilder<T> {
@@ -434,7 +435,10 @@ class QueryBuilder<T> {
 
   // 📊 Get filtered results with custom pagination
   async getFilteredResults(populatedFieldsToCheck: string[] = []) {
+    const _start = Date.now();
     const results = await this.modelQuery;
+    // Rely on the global Mongoose metrics plugin to record model/operation for this find.
+    // Removing the manual record prevents duplicate hits and avoids 'n/a' metadata entries.
 
     // Filter out documents where specified populated fields are null
     const filteredResults = results.filter((doc: any) => {
@@ -469,9 +473,13 @@ class QueryBuilder<T> {
 
   // 📊 Pagination info
   async getPaginationInfo() {
+    const _start = Date.now();
     const total = await this.modelQuery.model.countDocuments(
       this.modelQuery.getFilter()
     );
+    const dur = Date.now() - _start;
+    const modelName = (this.modelQuery.model as any)?.modelName || (this.modelQuery.model as any)?.collection?.name;
+    recordDbQuery(dur, { model: modelName, operation: 'countDocuments', cacheHit: false });
     const limit = Number(this?.query?.limit) || 10;
     const page = Number(this?.query?.page) || 1;
     const totalPage = Math.ceil(total / limit);

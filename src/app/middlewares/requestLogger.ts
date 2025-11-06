@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import colors from 'colors';
+import { randomUUID } from 'crypto';
 import { logger, errorLogger } from '../../shared/logger';
-import LogBuffer from '../observability/logBuffer';
+import { getLabels, controllerNameFromBasePath, getMetrics } from './requestContext';
 import config from '../../config';
 
 // 🗓️ Format date
@@ -217,6 +218,25 @@ const getPaymentIntentLogDetails = (evt: any) => {
   };
 };
 
+// 🎛️ Try to derive an Express handler/controller label
+const deriveHandlerLabel = (req: Request, res: Response): string | undefined => {
+  const fromLocals = (res.locals as any)?.handlerName;
+  if (fromLocals && typeof fromLocals === 'string') return fromLocals;
+
+  // Attempt to infer from Express route stack
+  const route: any = (req as any).route;
+  if (route?.stack && Array.isArray(route.stack)) {
+    const names = route.stack
+      .map((layer: any) => (layer && layer.handle && layer.handle.name) || '')
+      .filter((n: string) => Boolean(n));
+    if (names.length) return names[names.length - 1];
+  }
+
+  // Fallback to route path if available
+  if (route?.path) return `${req.method} ${route.path}`;
+  return undefined;
+};
+
 // 🧾 Main Logger
 export const requestLogger = (
   req: Request,
@@ -224,6 +244,9 @@ export const requestLogger = (
   next: NextFunction
 ) => {
   const start = Date.now();
+  const requestId = (typeof req.headers['x-request-id'] === 'string' && req.headers['x-request-id']) || randomUUID();
+  res.setHeader('X-Request-Id', requestId);
+  (res.locals as any).requestId = requestId;
 
   res.on('finish', () => {
     const ms = Date.now() - start;
@@ -281,9 +304,52 @@ export const requestLogger = (
     const responseMessage = responsePayload.message || '';
     const responseErrors = responsePayload.errorMessages;
 
+    // 🧑‍💻 Auth context (if available)
+    const authCtx = (() => {
+      const u: any = (req as any).user;
+      if (!u) return undefined;
+      return {
+        id: u.userId || u.id || u._id,
+        email: u.email,
+        role: u.role,
+      };
+    })();
+
+    // 🛰️ Client context
+    const ua = String(req.headers['user-agent'] || '');
+    const referer = String(req.headers['referer'] || req.headers['referrer'] || '');
+    const contentType = String(req.headers['content-type'] || '');
+    const handlerLabel = deriveHandlerLabel(req, res);
+    // Read dynamic labels from AsyncLocalStorage (if any)
+    const ctxLabels = getLabels();
+    let controllerLabel: string | undefined = (res.locals as any)?.controllerLabel || ctxLabels.controllerLabel || (res.locals as any)?.handlerName;
+    const serviceLabel: string | undefined = (res.locals as any)?.serviceLabel || ctxLabels.serviceLabel || (res.locals as any)?.serviceName;
+
+    // If controller label is missing, derive from base path + handler
+    if (!controllerLabel) {
+      const baseCtrl = controllerNameFromBasePath(req.baseUrl);
+      if (baseCtrl && handlerLabel) {
+        controllerLabel = `${baseCtrl}.${handlerLabel}`;
+      } else if (baseCtrl) {
+        controllerLabel = baseCtrl;
+      }
+    }
+
     const lines: string[] = [];
-    lines.push(colors.gray.bold(`[${formatDate()}]`));
+    lines.push(colors.gray.bold(`[${formatDate()}]  🧩 Req-ID: ${requestId}`));
     lines.push(`📥 Request: ${methodColor} ${routeColor} from IP:${ipColor}`);
+    lines.push(colors.gray(`     🛰️ Client: ua="${ua}" referer="${referer || 'n/a'}" ct="${contentType || 'n/a'}"`));
+    if (controllerLabel || serviceLabel) {
+      const parts: string[] = [];
+      if (controllerLabel) parts.push(`controller: ${controllerLabel}`);
+      if (serviceLabel) parts.push(`service: ${serviceLabel}`);
+      lines.push(colors.gray(`     🎛️ Handler: ${parts.join(' ')}`));
+    } else if (handlerLabel) {
+      lines.push(colors.gray(`     🎛️ Handler: ${handlerLabel}`));
+    }
+    if (authCtx) {
+      lines.push(colors.gray(`     👤 Auth: id="${authCtx.id || 'n/a'}" email="${authCtx.email || 'n/a'}" role="${authCtx.role || 'n/a'}"`));
+    }
 
     // 🔔 Stripe webhook request context (global)
     if (isStripeWebhook(req)) {
@@ -332,7 +398,9 @@ export const requestLogger = (
     }
 
     const respLabel = status >= 400 ? '❌ Response sent:' : '📤 Response sent:';
-    lines.push(`${respLabel} ${statusColor(` ${status} ${statusMsg} `)}`);
+    const respSizeHeader = res.getHeader('Content-Length');
+    const respSize = typeof respSizeHeader === 'string' ? respSizeHeader : Array.isArray(respSizeHeader) ? respSizeHeader[0] : (respSizeHeader as any);
+    lines.push(`${respLabel} ${statusColor(` ${status} ${statusMsg} `)} ${colors.gray(respSize ? `(size: ${respSize} bytes)` : '')}`);
 
     // 💬 Message with bg only on message text
     if (responseMessage) {
@@ -350,7 +418,104 @@ export const requestLogger = (
       );
     }
 
-    lines.push(colors.magenta.bold(`⏱️ Processed in ${ms}ms`));
+    // 📊 Metrics block (DB, Cache, External) with detailed DB categories
+    try {
+      const m = getMetrics();
+      if (m) {
+        const avg = (arr: number[]) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0);
+        const max = (arr: number[]) => (arr.length ? Math.max(...arr) : 0);
+
+        const dbHits = m.db.hits;
+        const dbAvg = avg(m.db.durations);
+        const dbSlow = max(m.db.durations);
+
+        // Build detailed DB metrics output
+        lines.push(' ----------------------------------------------------');
+        lines.push(colors.bold(' 🧮 DB Metrics'));
+        lines.push(colors.gray(`    • Hits            : ${dbHits}${dbHits > 0 ? ' ✅' : ''}`));
+        lines.push(colors.gray(`    • Avg Query Time  : ${dbAvg}ms ⏱️`));
+        lines.push(colors.gray(`    • Slowest Query   : ${dbSlow}ms ${dbSlow >= 1000 ? '🐌' : dbSlow >= 300 ? '⏱️' : '⚡'}`));
+
+        const queries = (m.db as any).queries || [];
+        const byCat = {
+          fast: queries.filter((q: any) => q?.durationMs < 300),
+          moderate: queries.filter((q: any) => q?.durationMs >= 300 && q?.durationMs < 1000),
+          slow: queries.filter((q: any) => q?.durationMs >= 1000),
+        };
+
+        lines.push(colors.bold(' Fast Queries ⚡ (< 300ms):'));
+        if (!byCat.fast.length) {
+          lines.push(colors.gray(' - None'));
+        } else {
+          byCat.fast.forEach((q: any) => {
+            lines.push(
+              colors.gray(
+                ` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`
+              )
+            );
+          });
+        }
+
+        lines.push(colors.bold(' Moderate Queries ⏱️ (300–999ms):'));
+        if (!byCat.moderate.length) {
+          lines.push(colors.gray(' - None'));
+        } else {
+          byCat.moderate.forEach((q: any) => {
+            lines.push(
+              colors.gray(
+                ` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`
+              )
+            );
+          });
+        }
+
+        lines.push(colors.bold(' Slow Queries 🐌 (>= 1000ms):'));
+        if (!byCat.slow.length) {
+          lines.push(colors.gray(' - None'));
+        } else {
+          byCat.slow.forEach((q: any) => {
+            lines.push(
+              colors.gray(
+                ` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`
+              )
+            );
+          });
+        }
+
+        const cacheHits = m.cache.hits;
+        const cacheMisses = m.cache.misses;
+        const cacheTotal = cacheHits + cacheMisses;
+        const cacheHitRatio = cacheTotal ? Math.round((cacheHits / cacheTotal) * 100) : 0;
+
+        const extCount = m.external.count;
+        const extAvg = avg(m.external.durations);
+        const extSlow = max(m.external.durations);
+
+        // Derive total request cost
+        let cost: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
+        if (dbHits >= 8 || dbAvg >= 120 || dbSlow >= 350 || extAvg >= 400 || extSlow >= 500) cost = 'HIGH';
+        else if (dbHits >= 4 || extCount >= 1) cost = 'MEDIUM';
+
+        lines.push(colors.bold(' 🗄️ Cache Metrics'));
+        lines.push(colors.gray(`    • Hits            : ${cacheHits}`));
+        lines.push(colors.gray(`    • Misses          : ${cacheMisses}`));
+        lines.push(colors.gray(`    • Hit Ratio       : ${cacheHitRatio}%`));
+
+        lines.push(colors.bold(' 🌐 External API Calls'));
+        lines.push(colors.gray(`    • Count           : ${extCount}`));
+        lines.push(colors.gray(`    • Avg Response    : ${extAvg}ms`));
+        lines.push(colors.gray(`    • Slowest Call    : ${extSlow}ms`));
+
+        const costColor = cost === 'HIGH' ? colors.bgRed.white.bold : cost === 'MEDIUM' ? colors.bgYellow.black.bold : colors.bgGreen.black.bold;
+        lines.push(' ----------------------------------------------------');
+        lines.push(`${colors.bold(' 📊 Total Request Cost ')}: ${costColor(` ${cost} `)} ${cost === 'HIGH' ? '⚠️' : cost === 'MEDIUM' ? '⚠️' : '✅'}`);
+      }
+    } catch {}
+
+    // ⏱️ Duration with thresholds and category label
+    const durColor = ms >= 1000 ? colors.bgRed.white.bold : ms >= 300 ? colors.bgYellow.black.bold : colors.bgGreen.black.bold;
+    const categoryLabel = ms >= 1000 ? 'Slow: >= 1000ms' : ms >= 300 ? 'Moderate: 300–999ms' : 'Fast: < 300ms';
+    lines.push(`${durColor(` ⏱️ Processed in ${ms}ms `)} ${colors.gray(`[ ${categoryLabel} ]`)}`);
 
     const formatted = lines.join('\n');
     if (!isObservabilityRoute) {
@@ -358,22 +523,7 @@ export const requestLogger = (
       else logger.info(formatted);
     }
 
-    // 📦 Push to in-memory log buffer for observability API
-    try {
-      LogBuffer.getInstance().push({
-        time: Date.now(),
-        level: status >= 400 ? 'error' : 'info',
-        status,
-        method: req.method,
-        url: req.originalUrl,
-        ip: getClientIp(req),
-        ms,
-        isWebhook: isStripeWebhook(req),
-        message: formatted,
-      });
-    } catch {
-      // noop
-    }
+    // Observability log buffer removed
   });
 
   next();

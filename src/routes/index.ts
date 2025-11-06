@@ -6,7 +6,6 @@ import { MessageRoutes } from '../app/modules/message/message.route';
 import { PaymentRoutes } from '../app/modules/payment/payment.routes';
 import { BookmarkRoutes } from '../app/modules/bookmark/bookmark.route';
 import { NotificationRoutes } from '../app/modules/notification/notification.routes';
-import { ObservabilityRoutes } from '../app/observability/observability.routes';
 
 const router = express.Router();
 
@@ -38,10 +37,6 @@ const apiRoutes = [
   {
     path: '/notifications',
     route: NotificationRoutes,
-  },
-  {
-    path: '/observability',
-    route: ObservabilityRoutes,
   },
 ];
 

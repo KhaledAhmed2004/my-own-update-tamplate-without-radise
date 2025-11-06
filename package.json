@@ -15,8 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
-    "start": "node dist/server.js",
-    "monitor": "node scripts/monitor.js"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -62,9 +61,6 @@
     "@types/express-session": "^1.18.2",
     "axios": "^1.13.1",
     "bcrypt": "^5.1.1",
-    "blessed": "^0.1.81",
-    "blessed-contrib": "^4.11.0",
-    "chalk": "^5.6.2",
     "cloudinary": "^2.8.0",
     "colors": "^1.4.0",
     "cookie-parser": "^1.4.7",
@@ -88,7 +84,7 @@
     "node-notifier": "^10.0.1",
     "nodemailer": "^6.9.14",
     "npm": "^10.8.1",
-    "ora": "^9.0.0",
+    
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",

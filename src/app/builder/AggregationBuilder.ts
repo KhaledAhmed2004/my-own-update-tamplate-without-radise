@@ -1,4 +1,5 @@
 import { Model, PipelineStage } from 'mongoose';
+import { recordDbQuery } from '../middlewares/requestContext';
 import httpStatus from 'http-status';
 import ApiError from '../../errors/ApiError';
 
@@ -62,7 +63,12 @@ class AggregationBuilder<T> {
   }
 
   async execute(): Promise<any[]> {
-    return await this.model.aggregate(this.pipeline);
+    const _start = Date.now();
+    const res = await this.model.aggregate(this.pipeline);
+    const dur = Date.now() - _start;
+    const modelName = (this.model as any)?.modelName || (this.model as any)?.collection?.name;
+    recordDbQuery(dur, { model: modelName, operation: 'aggregate', cacheHit: false });
+    return res;
   }
 
   // ====== PERIOD CALCULATOR ======
