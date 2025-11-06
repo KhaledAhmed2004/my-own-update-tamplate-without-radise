@@ -249,7 +249,7 @@ const requestLogger = (req, res, next) => {
     res.setHeader('X-Request-Id', requestId);
     res.locals.requestId = requestId;
     res.on('finish', () => {
-        var _a, _b, _c, _d, _e, _f, _g, _h;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         const ms = Date.now() - start;
         const status = res.statusCode;
         const statusMsg = statusText(status);
@@ -338,6 +338,16 @@ const requestLogger = (req, res, next) => {
         lines.push(colors_1.default.gray.bold(`[${formatDate()}]  🧩 Req-ID: ${requestId}`));
         lines.push(`📥 Request: ${methodColor} ${routeColor} from IP:${ipColor}`);
         lines.push(colors_1.default.gray(`     🛰️ Client: ua="${ua}" referer="${referer || 'n/a'}" ct="${contentType || 'n/a'}"`));
+        // Enriched device/OS/browser info (if available)
+        const info = (_f = res.locals) === null || _f === void 0 ? void 0 : _f.clientInfo;
+        if (info) {
+            const osVer = info.osVersion ? ` ${info.osVersion}` : '';
+            const model = info.deviceModel ? `, Model: ${info.deviceModel}` : '';
+            const arch = info.arch ? `, Arch: ${info.arch}` : '';
+            const bits = info.bitness ? `, ${info.bitness}-bit` : '';
+            const br = info.browser ? `, Browser: ${info.browser}${info.browserVersion ? ' ' + info.browserVersion : ''}` : '';
+            lines.push(colors_1.default.gray(`     💻 Device: ${info.deviceType}, OS: ${info.os}${osVer}${model}${arch}${bits}${br}`));
+        }
         if (controllerLabel || serviceLabel) {
             const parts = [];
             if (controllerLabel)
@@ -357,8 +367,8 @@ const requestLogger = (req, res, next) => {
             lines.push(colors_1.default.yellow('     🔔 Stripe webhook request context:'));
             lines.push(colors_1.default.gray(indentBlock(JSON.stringify(getWebhookLogContext(req), null, 2))));
             // ✅ Signature verification status from controller
-            const sigVerified = (_f = res.locals) === null || _f === void 0 ? void 0 : _f.webhookSignatureVerified;
-            const sigError = (_g = res.locals) === null || _g === void 0 ? void 0 : _g.webhookSignatureError;
+            const sigVerified = (_g = res.locals) === null || _g === void 0 ? void 0 : _g.webhookSignatureVerified;
+            const sigError = (_h = res.locals) === null || _h === void 0 ? void 0 : _h.webhookSignatureError;
             if (sigVerified === true) {
                 lines.push(colors_1.default.green('     ✅ Webhook signature verified successfully'));
             }
@@ -366,7 +376,7 @@ const requestLogger = (req, res, next) => {
                 lines.push(colors_1.default.red(`     ❌ Webhook signature verification failed: ${sigError || 'unknown error'}`));
             }
             // 🔐 Masked webhook secret preview
-            const secretPreview = ((_h = res.locals) === null || _h === void 0 ? void 0 : _h.webhookSecretPreview) || (process.env.STRIPE_WEBHOOK_SECRET ? String(process.env.STRIPE_WEBHOOK_SECRET).substring(0, 10) + '...' : undefined);
+            const secretPreview = ((_j = res.locals) === null || _j === void 0 ? void 0 : _j.webhookSecretPreview) || (process.env.STRIPE_WEBHOOK_SECRET ? String(process.env.STRIPE_WEBHOOK_SECRET).substring(0, 10) + '...' : undefined);
             if (secretPreview) {
                 lines.push(colors_1.default.blue(`     🔐 Webhook secret configured: ${secretPreview}`));
             }
@@ -407,7 +417,7 @@ const requestLogger = (req, res, next) => {
             lines.push(colors_1.default.red('📌 Details:'));
             lines.push(colors_1.default.gray(indentBlock(JSON.stringify(responseErrors, null, 2))));
         }
-        // 📊 Metrics block (DB, Cache, External)
+        // 📊 Metrics block (DB, Cache, External) with detailed DB categories
         try {
             const m = (0, requestContext_1.getMetrics)();
             if (m) {
@@ -416,6 +426,45 @@ const requestLogger = (req, res, next) => {
                 const dbHits = m.db.hits;
                 const dbAvg = avg(m.db.durations);
                 const dbSlow = max(m.db.durations);
+                // Build detailed DB metrics output
+                lines.push(' ----------------------------------------------------');
+                lines.push(colors_1.default.bold(' 🧮 DB Metrics'));
+                lines.push(colors_1.default.gray(`    • Hits            : ${dbHits}${dbHits > 0 ? ' ✅' : ''}`));
+                lines.push(colors_1.default.gray(`    • Avg Query Time  : ${dbAvg}ms ⏱️`));
+                lines.push(colors_1.default.gray(`    • Slowest Query   : ${dbSlow}ms ${dbSlow >= 1000 ? '🐌' : dbSlow >= 300 ? '⏱️' : '⚡'}`));
+                const queries = m.db.queries || [];
+                const byCat = {
+                    fast: queries.filter((q) => (q === null || q === void 0 ? void 0 : q.durationMs) < 300),
+                    moderate: queries.filter((q) => (q === null || q === void 0 ? void 0 : q.durationMs) >= 300 && (q === null || q === void 0 ? void 0 : q.durationMs) < 1000),
+                    slow: queries.filter((q) => (q === null || q === void 0 ? void 0 : q.durationMs) >= 1000),
+                };
+                lines.push(colors_1.default.bold(' Fast Queries ⚡ (< 300ms):'));
+                if (!byCat.fast.length) {
+                    lines.push(colors_1.default.gray(' - None'));
+                }
+                else {
+                    byCat.fast.forEach((q) => {
+                        lines.push(colors_1.default.gray(` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`));
+                    });
+                }
+                lines.push(colors_1.default.bold(' Moderate Queries ⏱️ (300–999ms):'));
+                if (!byCat.moderate.length) {
+                    lines.push(colors_1.default.gray(' - None'));
+                }
+                else {
+                    byCat.moderate.forEach((q) => {
+                        lines.push(colors_1.default.gray(` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`));
+                    });
+                }
+                lines.push(colors_1.default.bold(' Slow Queries 🐌 (>= 1000ms):'));
+                if (!byCat.slow.length) {
+                    lines.push(colors_1.default.gray(' - None'));
+                }
+                else {
+                    byCat.slow.forEach((q) => {
+                        lines.push(colors_1.default.gray(` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`));
+                    });
+                }
                 const cacheHits = m.cache.hits;
                 const cacheMisses = m.cache.misses;
                 const cacheTotal = cacheHits + cacheMisses;
@@ -429,11 +478,6 @@ const requestLogger = (req, res, next) => {
                     cost = 'HIGH';
                 else if (dbHits >= 4 || extCount >= 1)
                     cost = 'MEDIUM';
-                lines.push(' ----------------------------------------------------');
-                lines.push(colors_1.default.bold(' 🧮 DB Metrics'));
-                lines.push(colors_1.default.gray(`    • Hits            : ${dbHits}`));
-                lines.push(colors_1.default.gray(`    • Avg Query Time  : ${dbAvg}ms`));
-                lines.push(colors_1.default.gray(`    • Slowest Query   : ${dbSlow}ms`));
                 lines.push(colors_1.default.bold(' 🗄️ Cache Metrics'));
                 lines.push(colors_1.default.gray(`    • Hits            : ${cacheHits}`));
                 lines.push(colors_1.default.gray(`    • Misses          : ${cacheMisses}`));
@@ -447,7 +491,7 @@ const requestLogger = (req, res, next) => {
                 lines.push(`${colors_1.default.bold(' 📊 Total Request Cost ')}: ${costColor(` ${cost} `)} ${cost === 'HIGH' ? '⚠️' : cost === 'MEDIUM' ? '⚠️' : '✅'}`);
             }
         }
-        catch (_j) { }
+        catch (_k) { }
         // ⏱️ Duration with thresholds and category label
         const durColor = ms >= 1000 ? colors_1.default.bgRed.white.bold : ms >= 300 ? colors_1.default.bgYellow.black.bold : colors_1.default.bgGreen.black.bold;
         const categoryLabel = ms >= 1000 ? 'Slow: >= 1000ms' : ms >= 300 ? 'Moderate: 300–999ms' : 'Fast: < 300ms';

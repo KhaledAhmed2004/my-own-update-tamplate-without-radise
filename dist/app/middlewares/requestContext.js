@@ -8,7 +8,7 @@ const requestContextInit = (req, _res, next) => {
     storage.run({
         labels: {},
         metrics: {
-            db: { hits: 0, durations: [] },
+            db: { hits: 0, durations: [], queries: [] },
             cache: { hits: 0, misses: 0, hitDurations: [], missDurations: [] },
             external: { count: 0, durations: [] },
         },
@@ -32,12 +32,18 @@ exports.setServiceLabel = setServiceLabel;
 const getLabels = () => { var _a; return ((_a = storage.getStore()) === null || _a === void 0 ? void 0 : _a.labels) || {}; };
 exports.getLabels = getLabels;
 // ===== Metrics helpers =====
-const recordDbQuery = (durationMs) => {
+const recordDbQuery = (durationMs, meta) => {
     const store = storage.getStore();
     if (!store)
         return;
     store.metrics.db.hits += 1;
     store.metrics.db.durations.push(durationMs);
+    store.metrics.db.queries.push({
+        model: meta === null || meta === void 0 ? void 0 : meta.model,
+        operation: meta === null || meta === void 0 ? void 0 : meta.operation,
+        durationMs,
+        cacheHit: Boolean(meta === null || meta === void 0 ? void 0 : meta.cacheHit),
+    });
 };
 exports.recordDbQuery = recordDbQuery;
 const recordCacheHit = (durationMs) => {

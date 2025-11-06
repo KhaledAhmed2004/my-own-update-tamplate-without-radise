@@ -51,9 +51,12 @@ class AggregationBuilder {
     }
     execute() {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
             const _start = Date.now();
             const res = yield this.model.aggregate(this.pipeline);
-            (0, requestContext_1.recordDbQuery)(Date.now() - _start);
+            const dur = Date.now() - _start;
+            const modelName = ((_a = this.model) === null || _a === void 0 ? void 0 : _a.modelName) || ((_c = (_b = this.model) === null || _b === void 0 ? void 0 : _b.collection) === null || _c === void 0 ? void 0 : _c.name);
+            (0, requestContext_1.recordDbQuery)(dur, { model: modelName, operation: 'aggregate', cacheHit: false });
             return res;
         });
     }

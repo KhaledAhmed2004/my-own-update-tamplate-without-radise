@@ -381,7 +381,8 @@ class QueryBuilder {
             var _a, _b;
             const _start = Date.now();
             const results = yield this.modelQuery;
-            (0, requestContext_1.recordDbQuery)(Date.now() - _start);
+            // Rely on the global Mongoose metrics plugin to record model/operation for this find.
+            // Removing the manual record prevents duplicate hits and avoids 'n/a' metadata entries.
             // Filter out documents where specified populated fields are null
             const filteredResults = results.filter((doc) => {
                 if (populatedFieldsToCheck.length === 0) {
@@ -412,12 +413,14 @@ class QueryBuilder {
     // 📊 Pagination info
     getPaginationInfo() {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
+            var _a, _b, _c, _d, _e;
             const _start = Date.now();
             const total = yield this.modelQuery.model.countDocuments(this.modelQuery.getFilter());
-            (0, requestContext_1.recordDbQuery)(Date.now() - _start);
-            const limit = Number((_a = this === null || this === void 0 ? void 0 : this.query) === null || _a === void 0 ? void 0 : _a.limit) || 10;
-            const page = Number((_b = this === null || this === void 0 ? void 0 : this.query) === null || _b === void 0 ? void 0 : _b.page) || 1;
+            const dur = Date.now() - _start;
+            const modelName = ((_a = this.modelQuery.model) === null || _a === void 0 ? void 0 : _a.modelName) || ((_c = (_b = this.modelQuery.model) === null || _b === void 0 ? void 0 : _b.collection) === null || _c === void 0 ? void 0 : _c.name);
+            (0, requestContext_1.recordDbQuery)(dur, { model: modelName, operation: 'countDocuments', cacheHit: false });
+            const limit = Number((_d = this === null || this === void 0 ? void 0 : this.query) === null || _d === void 0 ? void 0 : _d.limit) || 10;
+            const page = Number((_e = this === null || this === void 0 ? void 0 : this.query) === null || _e === void 0 ? void 0 : _e.page) || 1;
             const totalPage = Math.ceil(total / limit);
             return {
                 total,

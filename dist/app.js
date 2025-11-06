@@ -5,8 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const cors_1 = __importDefault(require("cors"));
 const yamljs_1 = __importDefault(require("yamljs"));
-require("./app/middlewares/autoLabelBootstrap");
+// Ensure DB metrics plugin loads BEFORE any models compile
 require("./app/observability/mongooseMetrics");
+require("./app/middlewares/autoLabelBootstrap");
 const routes_1 = __importDefault(require("./routes"));
 const morgen_1 = require("./shared/morgen");
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
@@ -15,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const globalErrorHandler_1 = __importDefault(require("./app/middlewares/globalErrorHandler"));
 const requestContext_1 = require("./app/middlewares/requestContext");
+const clientInfo_1 = require("./app/middlewares/clientInfo");
 // import './config/passport';
 const requestLogger_1 = require("./app/middlewares/requestLogger");
 const path_1 = __importDefault(require("path"));
@@ -25,6 +27,40 @@ const app = (0, express_1.default)();
 // Morgan logging
 app.use(morgen_1.Morgan.successHandler);
 app.use(morgen_1.Morgan.errorHandler);
+// Client Hints: request OS/device info from browsers without frontend changes
+app.use((req, res, next) => {
+    // Ask for high-entropy client hints (Chrome/Edge)
+    res.setHeader('Accept-CH', [
+        'Sec-CH-UA',
+        'Sec-CH-UA-Platform',
+        'Sec-CH-UA-Platform-Version',
+        'Sec-CH-UA-Mobile',
+        'Sec-CH-UA-Model',
+        'Sec-CH-UA-Arch',
+        'Sec-CH-UA-Bitness',
+    ].join(', '));
+    // Vary to keep caches/proxies from mixing responses across devices
+    const varyHeaders = [
+        'User-Agent',
+        'Sec-CH-UA',
+        'Sec-CH-UA-Platform',
+        'Sec-CH-UA-Platform-Version',
+        'Sec-CH-UA-Mobile',
+        'Sec-CH-UA-Model',
+        'Sec-CH-UA-Arch',
+        'Sec-CH-UA-Bitness',
+    ].join(', ');
+    const existingVary = res.getHeader('Vary');
+    res.setHeader('Vary', existingVary ? String(existingVary) + ', ' + varyHeaders : varyHeaders);
+    // Encourage first-request delivery (Chrome only)
+    res.setHeader('Critical-CH', [
+        'Sec-CH-UA-Platform',
+        'Sec-CH-UA-Platform-Version',
+        'Sec-CH-UA-Mobile',
+        'Sec-CH-UA-Model',
+    ].join(', '));
+    next();
+});
 // CORS setup
 const allowedOrigins = [
     'http://localhost:3000',
@@ -121,6 +157,8 @@ app.use(passport_1.default.initialize());
 // Request/Response logging
 // Initialize request-scoped context BEFORE logging
 app.use(requestContext_1.requestContextInit);
+// Detect device/OS/browser from headers (Client Hints + UA fallback)
+app.use(clientInfo_1.clientInfo);
 app.use(requestLogger_1.requestLogger);
 // Static files
 app.use(express_1.default.static('uploads'));

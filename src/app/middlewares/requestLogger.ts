@@ -339,6 +339,17 @@ export const requestLogger = (
     lines.push(colors.gray.bold(`[${formatDate()}]  🧩 Req-ID: ${requestId}`));
     lines.push(`📥 Request: ${methodColor} ${routeColor} from IP:${ipColor}`);
     lines.push(colors.gray(`     🛰️ Client: ua="${ua}" referer="${referer || 'n/a'}" ct="${contentType || 'n/a'}"`));
+    // Enriched device/OS/browser info (if available)
+    const info: any = (res.locals as any)?.clientInfo;
+    if (info) {
+      const osLabel = info.osFriendly || info.os;
+      const osRaw = info.osVersion ? ` (${info.osVersion})` : '';
+      const model = info.deviceModel ? `, Model: ${info.deviceModel}` : '';
+      const arch = info.arch ? `, Arch: ${info.arch}` : '';
+      const bits = info.bitness ? `, ${info.bitness}-bit` : '';
+      const br = info.browser ? `, Browser: ${info.browser}${info.browserVersion ? ' ' + info.browserVersion : ''}` : '';
+      lines.push(colors.gray(`     💻 Device: ${info.deviceType}, OS: ${osLabel}${osRaw}${model}${arch}${bits}${br}`));
+    }
     if (controllerLabel || serviceLabel) {
       const parts: string[] = [];
       if (controllerLabel) parts.push(`controller: ${controllerLabel}`);

@@ -236,3 +236,66 @@ wrapController('PaymentController', PaymentController);
 - Cache ব্যবহার করলে `CacheHelper.get()` default ব্যবহার করুন — metrics auto হবে।
 - নতুন module add করলে `autoLabelBootstrap.ts`-এ `wrapService`/`wrapController` এন্ট্রি দিন।
 - Import order বজায় রাখুন: metrics plugin → bootstrap → router।
+
+## Client Info Enrichment (OS/Device Detection)
+Server logs-এ এখন browser Client Hints ব্যবহার করে OS/Device/Arch/Bitness/Browser details দেখানো হয়, fallback হিসেবে User-Agent parse করা হয়।
+
+### কেন যোগ করা হল
+- Chrome/Edge UA string-এ OS version কম accurate (e.g., `Windows NT 10.0`), তাই Client Hints (`sec-ch-ua-*`) বেশি নির্ভুল।
+- Debugging ও analytics-এ device type/arch/bitness দরকার হয়।
+
+### কীভাবে কাজ করে
+- Server response-এ `Accept-CH`, `Critical-CH` header পাঠানো হয় — browser পরের request থেকে Client Hints পাঠায়।
+- Middleware `clientInfo.ts` প্রথমে Client Hints পড়ে, না পেলে `ua-parser-js` দিয়ে UA parse করে।
+- `requestLogger.ts` enriched line print করে।
+
+### কোন ফাইলে কী update
+- `src/app.ts`
+  - Global headers middleware add: `Accept-CH: Sec-CH-UA, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Arch, Sec-CH-UA-Bitness`
+  - `Vary: Sec-CH-UA, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Arch, Sec-CH-UA-Bitness`
+  - `Critical-CH: Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version`
+  - Middleware order: `requestContextInit` → `clientInfo` → `requestLogger`।
+- `src/app/middlewares/clientInfo.ts`
+  - Client Hints normalize করে `res.locals.clientInfo`-এ store করে: `os`, `osFriendly`, `osVersion`, `deviceType`, `deviceModel`, `arch`, `bitness`, `browser`, `browserVersion`, `ua`।
+  - Windows mapping heuristic: `platformVersion` major ≥ 13 ⇒ `Windows 11`, else `Windows 10`।
+- `src/app/middlewares/requestLogger.ts`
+  - নতুন লাইন add: `💻 Device: <deviceType>, OS: <osFriendly> (<osVersion>) ... Browser: <name> <version>`।
+
+### Expected Log Example (Client Info)
+```
+📥 Request:  GET  /api/v1/notifications from IP: 127.0.0.1
+     🛰️ Client: ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Chrome/142.0.0.0 ..." referer="http://localhost:5001/" ct="n/a"
+     💻 Device: desktop, OS: Windows 11 (19.0.0), Arch: x86, 64-bit, Browser: Chrome 142.0.0.0
+     🎛️ Handler: controller: NotificationController.getNotificationFromDB service: NotificationService.getNotificationFromDB
+```
+> নোট: UA reduction-এর কারণে `🛰️ Client` লাইনে Windows সবসময় `Windows NT 10.0` দেখাতে পারে — enriched `💻 Device` লাইনে Client Hints দিয়ে friendly OS name (Windows 10/11) দেখানো হয় এবং raw token parentheses-এ রাখা হয়।
+
+### Usage
+- Dev server রান করুন: `npm run dev` — TypeScript changes live চলে (build errors থাকলেও dev চলবে)।
+- Browser (Chrome/Edge) দিয়ে একই endpoint দুবার hit দিন:
+  - ১ম request: browser `Accept-CH` headers cache করে।
+  - ২য় request: browser Client Hints পাঠাবে → `💻 Device` লাইন দেখাবে।
+- Client Hints শুধু browser পাঠায় — Postman/curl-এ দেখাবে না।
+
+### Browser Support & Caching
+- Chrome/Edge: Client Hints ভালোভাবে support করে।
+- Firefox/Safari: সীমিত support — fallback UA parsing ব্যবহার হবে।
+- `Vary` header cache-safe behaviour নিশ্চিত করে যাতে CDN/proxy ভুলভাবে cache না করে।
+
+### Troubleshooting (Client Hints)
+- `💻 Device` দেখা যাচ্ছে না:
+  - নিশ্চিত করুন `app.ts`-এ headers middleware আছে ও `clientInfo` `requestLogger`-এর আগে।
+  - Chrome DevTools → Network → Request Headers-এ দেখুন: `sec-ch-ua-platform`, `sec-ch-ua-platform-version`, `sec-ch-ua-mobile`, `sec-ch-ua-arch`, `sec-ch-ua-bitness` আসছে কিনা।
+  - Cross-origin হলে (frontend `:5001` → API `:5000`), API side `Accept-CH` পাঠানোর পর দ্বিতীয় কল থেকে hints আসবে।
+- Windows ভুল দেখাচ্ছে:
+  - UA লাইনে `Windows NT 10.0` normal — enriched লাইনের `osFriendly`/`osVersion` দেখুন।
+  - Windows heuristic current Chromium token mapping অনুযায়ী — চাইলে build ranges টিউন করা যাবে।
+
+### API/Code Reference
+- Headers middleware: `src/app.ts`
+- Client detection: `src/app/middlewares/clientInfo.ts`
+- Logger enrichment: `src/app/middlewares/requestLogger.ts`
+
+### Summary (Client Info)
+- Client Hints + UA fallback দিয়ে backend-only device/OS detection add করা হয়েছে।
+- Logs আরো actionable: device type, OS (friendly), arch/bitness, browser — সব এক লাইনে।

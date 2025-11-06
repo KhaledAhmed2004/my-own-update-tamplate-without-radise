@@ -11,6 +11,7 @@ import express, { Request, Response } from 'express';
 import cookieParser from 'cookie-parser';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import { requestContextInit } from './app/middlewares/requestContext';
+import { clientInfo } from './app/middlewares/clientInfo';
 // import './config/passport';
 import { requestLogger } from './app/middlewares/requestLogger';
 import path from 'path';
@@ -23,6 +24,50 @@ const app = express();
 // Morgan logging
 app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
+
+// Client Hints: request OS/device info from browsers without frontend changes
+app.use((req, res, next) => {
+  // Ask for high-entropy client hints (Chrome/Edge)
+  res.setHeader(
+    'Accept-CH',
+    [
+      'Sec-CH-UA',
+      'Sec-CH-UA-Platform',
+      'Sec-CH-UA-Platform-Version',
+      'Sec-CH-UA-Mobile',
+      'Sec-CH-UA-Model',
+      'Sec-CH-UA-Arch',
+      'Sec-CH-UA-Bitness',
+    ].join(', ')
+  );
+
+  // Vary to keep caches/proxies from mixing responses across devices
+  const varyHeaders = [
+    'User-Agent',
+    'Sec-CH-UA',
+    'Sec-CH-UA-Platform',
+    'Sec-CH-UA-Platform-Version',
+    'Sec-CH-UA-Mobile',
+    'Sec-CH-UA-Model',
+    'Sec-CH-UA-Arch',
+    'Sec-CH-UA-Bitness',
+  ].join(', ');
+  const existingVary = res.getHeader('Vary');
+  res.setHeader('Vary', existingVary ? String(existingVary) + ', ' + varyHeaders : varyHeaders);
+
+  // Encourage first-request delivery (Chrome only)
+  res.setHeader(
+    'Critical-CH',
+    [
+      'Sec-CH-UA-Platform',
+      'Sec-CH-UA-Platform-Version',
+      'Sec-CH-UA-Mobile',
+      'Sec-CH-UA-Model',
+    ].join(', ')
+  );
+
+  next();
+});
 
 // CORS setup
 const allowedOrigins = [
@@ -129,6 +174,8 @@ app.use(passport.initialize());
 // Request/Response logging
 // Initialize request-scoped context BEFORE logging
 app.use(requestContextInit);
+// Detect device/OS/browser from headers (Client Hints + UA fallback)
+app.use(clientInfo);
 app.use(requestLogger);
 
 // Static files
