@@ -7,12 +7,25 @@ import handleZodError from '../../errors/handleZodError';
 import handleCastError from '../../errors/handleCastError';
 import { errorLogger } from '../../shared/logger';
 import { IErrorMessage } from '../../types/errors.types';
+import { trace } from '@opentelemetry/api';
 
 const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
   // config.node_env === 'development'
   //   ? console.log('🚨 globalErrorHandler ~~ ', error)
   //   : errorLogger.error('🚨 globalErrorHandler ~~ ', error);
   errorLogger.error('🚨 globalErrorHandler ~~ ', error);
+
+  // OpenTelemetry: start Error Handler span
+  const tracer = trace.getTracer('app');
+  const span = tracer.startSpan('Error Handler');
+  try {
+    span.setAttribute('layer', 'Middleware > Error');
+    span.setAttribute('http.method', req.method);
+    span.setAttribute('http.route', (req.route && (req.route as any).path) || req.originalUrl || 'n/a');
+    span.addEvent('ERROR_HANDLER_START');
+    // Record the incoming error for context but keep handler span non-error
+    span.recordException(error as any);
+    span.setStatus({ code: 1, message: 'Formatted error response' });
 
   let statusCode = 500;
   let message = 'Something went wrong';
@@ -88,6 +101,11 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     errorMessages,
     stack: config.node_env !== 'production' ? error?.stack : undefined,
   });
+  } finally {
+    span.addEvent('FORMATTED_ERROR_RESPONSE');
+    span.addEvent('ERROR_HANDLER_COMPLETE');
+    span.end();
+  }
 };
 
 export default globalErrorHandler;

@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { recordDbQuery } from './requestContext';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 
 function getModelName(self: any): string | undefined {
   return (
@@ -15,6 +16,12 @@ const preStart = (op: string) =>
   function (this: any, next: (err?: any) => void) {
     this.__metricsStart = Date.now();
     this.__metricsOp = op;
+    try {
+      const tracer = trace.getTracer('app');
+      const model = getModelName(this) || 'UnknownModel';
+      const span = tracer.startSpan(`🗄️  Database: ${model}.${op}`);
+      this.__otelSpan = span;
+    } catch {}
     next();
   };
 
@@ -46,13 +53,31 @@ const postEnd = (op: string) =>
         nReturned = 1;
       }
     } catch {}
-    // Try explain('executionStats') to enrich docs/index/stage
+    // Try explain('executionStats') via native driver for accurate metrics
     let docsExamined: number | undefined;
     let indexUsed: string | undefined;
     let executionStage: string | undefined;
     try {
-      if (typeof (this as any).explain === 'function') {
-        const exp = await (this as any).explain('executionStats');
+      const coll = this?.model?.collection;
+      const filter = (typeof (this as any).getFilter === 'function' ? (this as any).getFilter() : (this as any)._conditions) || {};
+      let exp: any;
+      if (coll) {
+        if (op === 'find') {
+          exp = await coll.find(filter as any).explain('executionStats');
+        } else if (op === 'findOne') {
+          exp = await coll.find(filter as any).limit(1).explain('executionStats');
+        } else if (op === 'countDocuments') {
+          // For count, use a find explain to observe scan behavior
+          exp = await coll.find(filter as any).explain('executionStats');
+        } else if (op === 'aggregate' && typeof this?.pipeline === 'function') {
+          const pl = this.pipeline();
+          exp = await coll.aggregate(pl as any).explain('executionStats');
+        } else if (op === 'updateOne' || op === 'updateMany' || op === 'deleteOne' || op === 'deleteMany' || op === 'findOneAndUpdate') {
+          // Use find explain for write filters to infer index usage
+          exp = await coll.find(filter as any).limit(op === 'updateMany' || op === 'deleteMany' ? 0 : 1).explain('executionStats');
+        }
+      }
+      if (exp) {
         const stats = extractExplainStats(exp);
         docsExamined = stats.docsExamined;
         indexUsed = stats.indexUsed;
@@ -62,7 +87,34 @@ const postEnd = (op: string) =>
         }
       }
     } catch {}
-    recordDbQuery(dur, { model, operation: op, cacheHit: false, pipeline, nReturned, docsExamined, indexUsed, executionStage });
+    // Index suggestion (basic): if COLLSCAN or docsExamined >> nReturned
+    let suggestion: string | undefined;
+    try {
+      const conds = (this as any)._conditions || (typeof (this as any).getFilter === 'function' ? (this as any).getFilter() : undefined);
+      const keys = conds && typeof conds === 'object' ? Object.keys(conds) : [];
+      const idxFields = keys.slice(0, 3).map(k => `${k}: 1`).join(', ');
+      const efficiency = nReturned && docsExamined ? `${docsExamined}:${nReturned}` : undefined;
+      if (!indexUsed || indexUsed === 'NO_INDEX' || (docsExamined && nReturned && docsExamined > nReturned * 50)) {
+        suggestion = idxFields ? `Create compound index on { ${idxFields} }` : undefined;
+      }
+      // Attach attributes to OTel span
+      if (this.__otelSpan) {
+        try {
+          this.__otelSpan.setAttribute('db.model', model || 'unknown');
+          this.__otelSpan.setAttribute('db.operation', op);
+          if (pipeline) this.__otelSpan.setAttribute('db.pipeline', pipeline);
+          if (typeof nReturned === 'number') this.__otelSpan.setAttribute('db.n_returned', nReturned);
+          if (typeof docsExamined === 'number') this.__otelSpan.setAttribute('db.docs_examined', docsExamined);
+          if (indexUsed) this.__otelSpan.setAttribute('db.index_used', indexUsed);
+          if (executionStage) this.__otelSpan.setAttribute('db.execution_stage', executionStage);
+          if (efficiency) this.__otelSpan.setAttribute('db.scan_efficiency', efficiency);
+          if (suggestion) this.__otelSpan.setAttribute('db.index_suggestion', suggestion);
+          this.__otelSpan.end();
+        } catch {}
+      }
+    } catch {}
+
+    recordDbQuery(dur, { model, operation: op, cacheHit: false, pipeline, nReturned, docsExamined, indexUsed, executionStage, suggestion });
     next();
   };
 
@@ -124,12 +176,17 @@ function extractExplainStats(exp: any): {
   if (!exp || typeof exp !== 'object') return {};
   const es = exp.executionStats || {};
   const qp = exp.queryPlanner || {};
-  const totalDocsExamined = es.totalDocsExamined ?? es.docsExamined;
+  // Prefer top-level totals, but fall back to nested executionStages chain
+  const deepDocs = es.executionStages?.docsExamined
+    ?? es.executionStages?.totalDocsExamined
+    ?? es.executionStages?.inputStage?.docsExamined
+    ?? es.executionStages?.inputStage?.inputStage?.docsExamined;
+  const totalDocsExamined = es.totalDocsExamined ?? es.docsExamined ?? deepDocs;
   const nReturned = es.nReturned;
   const winning = qp.winningPlan || {};
-  const stage = winning.stage || winning.inputStage?.stage || es.executionStages?.stage;
+  const stage = winning.stage || winning.inputStage?.stage || winning.inputStage?.inputStage?.stage || es.executionStages?.stage || es.executionStages?.inputStage?.stage;
   const input = winning.inputStage || {};
-  const indexName = input.indexName || winning.indexName || es.executionStages?.indexName;
+  const indexName = input.indexName || input.inputStage?.indexName || winning.indexName || es.executionStages?.indexName || es.executionStages?.inputStage?.indexName;
   let executionStage = typeof stage === 'string' ? stage : undefined;
   let indexUsed: string | undefined = undefined;
   if (executionStage && executionStage.toUpperCase().includes('COLLSCAN')) {
@@ -176,6 +233,13 @@ export function registerMongooseMetricsPlugin() {
       if (err) {
         const start = this.__metricsStart || Date.now();
         recordDbQuery(Date.now() - start, { model: getModelName(this), operation: 'updateOne', cacheHit: false });
+        if (this.__otelSpan) {
+          try {
+            this.__otelSpan.recordException(err);
+            this.__otelSpan.setStatus({ code: SpanStatusCode.ERROR, message: String(err?.message || err) });
+            this.__otelSpan.end();
+          } catch {}
+        }
       }
       next(err);
     });
@@ -183,6 +247,13 @@ export function registerMongooseMetricsPlugin() {
       if (err) {
         const start = this.__metricsStart || Date.now();
         recordDbQuery(Date.now() - start, { model: getModelName(this), operation: 'updateMany', cacheHit: false });
+        if (this.__otelSpan) {
+          try {
+            this.__otelSpan.recordException(err);
+            this.__otelSpan.setStatus({ code: SpanStatusCode.ERROR, message: String(err?.message || err) });
+            this.__otelSpan.end();
+          } catch {}
+        }
       }
       next(err);
     });
@@ -190,6 +261,13 @@ export function registerMongooseMetricsPlugin() {
       if (err) {
         const start = this.__metricsStart || Date.now();
         recordDbQuery(Date.now() - start, { model: getModelName(this), operation: 'findOneAndUpdate', cacheHit: false });
+        if (this.__otelSpan) {
+          try {
+            this.__otelSpan.recordException(err);
+            this.__otelSpan.setStatus({ code: SpanStatusCode.ERROR, message: String(err?.message || err) });
+            this.__otelSpan.end();
+          } catch {}
+        }
       }
       next(err);
     });
@@ -197,6 +275,13 @@ export function registerMongooseMetricsPlugin() {
       if (err) {
         const start = this.__metricsStart || Date.now();
         recordDbQuery(Date.now() - start, { model: getModelName(this), operation: 'deleteOne', cacheHit: false });
+        if (this.__otelSpan) {
+          try {
+            this.__otelSpan.recordException(err);
+            this.__otelSpan.setStatus({ code: SpanStatusCode.ERROR, message: String(err?.message || err) });
+            this.__otelSpan.end();
+          } catch {}
+        }
       }
       next(err);
     });
@@ -204,6 +289,13 @@ export function registerMongooseMetricsPlugin() {
       if (err) {
         const start = this.__metricsStart || Date.now();
         recordDbQuery(Date.now() - start, { model: getModelName(this), operation: 'deleteMany', cacheHit: false });
+        if (this.__otelSpan) {
+          try {
+            this.__otelSpan.recordException(err);
+            this.__otelSpan.setStatus({ code: SpanStatusCode.ERROR, message: String(err?.message || err) });
+            this.__otelSpan.end();
+          } catch {}
+        }
       }
       next(err);
     });

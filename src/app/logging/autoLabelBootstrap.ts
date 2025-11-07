@@ -1,4 +1,5 @@
 import { setServiceLabel, setControllerLabel } from './requestContext';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { AuthService } from '../modules/auth/auth.service';
 import { UserService } from '../modules/user/user.service';
 import { NotificationService } from '../modules/notification/notification.service';
@@ -11,10 +12,24 @@ const wrapService = (serviceName: string, obj: Record<string, any>) => {
     const original = obj[key];
     if (typeof original === 'function') {
       obj[key] = (...args: any[]) => {
-        try {
-          setServiceLabel(`${serviceName}.${key}`);
-        } catch {}
-        return original(...args);
+        const label = `${serviceName}.${key}`;
+        try { setServiceLabel(label); } catch {}
+        const tracer = trace.getTracer('app');
+        return tracer.startActiveSpan(`Service: ${label}`, async span => {
+          try {
+            const out = original(...args);
+            if (out && typeof (out as any).then === 'function') {
+              return await out;
+            }
+            return out;
+          } catch (err) {
+            span.recordException(err as any);
+            span.setStatus({ code: SpanStatusCode.ERROR, message: (err as Error)?.message });
+            throw err;
+          } finally {
+            span.end();
+          }
+        });
       };
     }
   });
@@ -33,10 +48,24 @@ const wrapController = (controllerName: string, obj: Record<string, any>) => {
     const original = obj[key];
     if (typeof original === 'function') {
       obj[key] = (...args: any[]) => {
-        try {
-          setControllerLabel(`${controllerName}.${key}`);
-        } catch {}
-        return original(...args);
+        const label = `${controllerName}.${key}`;
+        try { setControllerLabel(label); } catch {}
+        const tracer = trace.getTracer('app');
+        return tracer.startActiveSpan(`Controller: ${label}`, async span => {
+          try {
+            const out = original(...args);
+            if (out && typeof (out as any).then === 'function') {
+              return await out;
+            }
+            return out;
+          } catch (err) {
+            span.recordException(err as any);
+            span.setStatus({ code: SpanStatusCode.ERROR, message: (err as Error)?.message });
+            throw err;
+          } finally {
+            span.end();
+          }
+        });
       };
     }
   });

@@ -4,6 +4,8 @@ import { randomUUID } from 'crypto';
 import { logger, errorLogger } from '../../shared/logger';
 import { getLabels, controllerNameFromBasePath, getMetrics } from './requestContext';
 import config from '../../config';
+import { trace, context } from '@opentelemetry/api';
+import { getTimelineTotal } from './opentelemetry';
 
 // 🗓️ Format date
 const formatDate = (): string => {
@@ -250,6 +252,13 @@ export const requestLogger = (
 
   res.on('finish', () => {
     const ms = Date.now() - start;
+    let processedMs = ms;
+    try {
+      const span = trace.getSpan(context.active());
+      const tid = span?.spanContext().traceId;
+      const total = tid ? getTimelineTotal(tid) : undefined;
+      if (typeof total === 'number' && total > 0) processedMs = total;
+    } catch {}
     const status = res.statusCode;
     const statusMsg = statusText(status);
     // Silence console logs for observability endpoints to avoid terminal spam
@@ -563,9 +572,9 @@ export const requestLogger = (
     } catch {}
 
     // ⏱️ Duration with thresholds and category label
-    const durColor = ms >= 1000 ? colors.bgRed.white.bold : ms >= 300 ? colors.bgYellow.black.bold : colors.bgGreen.black.bold;
-    const categoryLabel = ms >= 1000 ? 'Slow: >= 1000ms' : ms >= 300 ? 'Moderate: 300–999ms' : 'Fast: < 300ms';
-    lines.push(`${durColor(` ⏱️ Processed in ${ms}ms `)} ${colors.gray(`[ ${categoryLabel} ]`)}`);
+    const durColor = processedMs >= 1000 ? colors.bgRed.white.bold : processedMs >= 300 ? colors.bgYellow.black.bold : colors.bgGreen.black.bold;
+    const categoryLabel = processedMs >= 1000 ? 'Slow: >= 1000ms' : processedMs >= 300 ? 'Moderate: 300–999ms' : 'Fast: < 300ms';
+    lines.push(`${durColor(` ⏱️ Processed in ${processedMs}ms `)} ${colors.gray(`[ ${categoryLabel} ]`)}`);
 
     const formatted = lines.join('\n');
     if (!isObservabilityRoute) {
