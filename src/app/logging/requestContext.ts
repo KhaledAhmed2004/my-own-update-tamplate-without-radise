@@ -6,6 +6,12 @@ type DbQueryRecord = {
   operation?: string;
   durationMs: number;
   cacheHit: boolean;
+  docsExamined?: number | string;
+  indexUsed?: string; // e.g., INDEX, NO_INDEX, or specific index name
+  pipeline?: string; // compact summary for aggregate
+  suggestion?: string; // optimization hint for slow/missing index cases
+  nReturned?: number; // documents returned by the operation
+  executionStage?: string; // e.g., COLLSCAN, IXSCAN, FETCH
 };
 
 type ContextStore = {
@@ -54,7 +60,17 @@ export const getLabels = () => storage.getStore()?.labels || {};
 // ===== Metrics helpers =====
 export const recordDbQuery = (
   durationMs: number,
-  meta?: { model?: string; operation?: string; cacheHit?: boolean }
+  meta?: {
+    model?: string;
+    operation?: string;
+    cacheHit?: boolean;
+    docsExamined?: number | string;
+    indexUsed?: string;
+    pipeline?: string;
+    suggestion?: string;
+    nReturned?: number;
+    executionStage?: string;
+  }
 ) => {
   const store = storage.getStore();
   if (!store) return;
@@ -65,6 +81,12 @@ export const recordDbQuery = (
     operation: meta?.operation,
     durationMs,
     cacheHit: Boolean(meta?.cacheHit),
+    docsExamined: meta?.docsExamined,
+    indexUsed: meta?.indexUsed,
+    pipeline: meta?.pipeline,
+    suggestion: meta?.suggestion,
+    nReturned: meta?.nReturned,
+    executionStage: meta?.executionStage,
   });
 };
 

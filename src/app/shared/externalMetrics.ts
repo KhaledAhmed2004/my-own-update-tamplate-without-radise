@@ -1,4 +1,4 @@
-import { recordExternalCall } from '../middlewares/requestContext';
+import { recordExternalCall } from '../logging/requestContext';
 import { logger, errorLogger } from '../../shared/logger';
 
 export async function trackExternal<T>(label: string, fn: () => Promise<T>): Promise<T> {

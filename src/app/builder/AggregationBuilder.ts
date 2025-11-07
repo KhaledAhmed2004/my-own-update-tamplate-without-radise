@@ -1,5 +1,5 @@
 import { Model, PipelineStage } from 'mongoose';
-import { recordDbQuery } from '../middlewares/requestContext';
+import { recordDbQuery } from '../logging/requestContext';
 import httpStatus from 'http-status';
 import ApiError from '../../errors/ApiError';
 
@@ -67,7 +67,8 @@ class AggregationBuilder<T> {
     const res = await this.model.aggregate(this.pipeline);
     const dur = Date.now() - _start;
     const modelName = (this.model as any)?.modelName || (this.model as any)?.collection?.name;
-    recordDbQuery(dur, { model: modelName, operation: 'aggregate', cacheHit: false });
+    const pipelineSummary = summarizePipeline(this.pipeline);
+    recordDbQuery(dur, { model: modelName, operation: 'aggregate', cacheHit: false, pipeline: pipelineSummary });
     return res;
   }
 
@@ -498,4 +499,51 @@ const calculateGrowthDynamic = async (
 };
 
 export default AggregationBuilder;
+// Compact summary for aggregation pipeline
+function summarizePipeline(pipeline: PipelineStage[]): string {
+  const parts: string[] = [];
+  for (const stage of pipeline) {
+    const key = stage && typeof stage === 'object' ? Object.keys(stage as any)[0] : undefined;
+    if (!key) continue;
+    const val: any = (stage as any)[key];
+    switch (key) {
+      case '$match': {
+        const conds = val && typeof val === 'object' ? Object.keys(val) : [];
+        const firstKey = conds[0];
+        let display = `$match`;
+        if (firstKey) {
+          const v = val[firstKey];
+          const repr = typeof v === 'object' ? JSON.stringify(v) : String(v);
+          display = `$match(${firstKey}=${repr})`;
+        }
+        parts.push(display);
+        break;
+      }
+      case '$group': {
+        const idVal = val?._id !== undefined ? val._id : undefined;
+        const idRepr = idVal !== undefined ? String(idVal) : undefined;
+        parts.push(idRepr ? `$group(_id='${idRepr}')` : `$group`);
+        break;
+      }
+      case '$sort': {
+        const keys = val && typeof val === 'object' ? Object.keys(val) : [];
+        parts.push(keys.length ? `$sort(${keys.join(',')})` : `$sort`);
+        break;
+      }
+      case '$project': {
+        const keys = val && typeof val === 'object' ? Object.keys(val) : [];
+        parts.push(keys.length ? `$project(${keys.length} fields)` : `$project`);
+        break;
+      }
+      case '$lookup': {
+        const from = val?.from ? String(val.from) : undefined;
+        parts.push(from ? `$lookup(from='${from}')` : `$lookup`);
+        break;
+      }
+      default:
+        parts.push(key);
+    }
+  }
+  return parts.join(' → ');
+}
 export { calculateGrowthDynamic };

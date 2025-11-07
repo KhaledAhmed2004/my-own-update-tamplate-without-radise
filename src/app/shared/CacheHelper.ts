@@ -1,6 +1,6 @@
 import NodeCache from 'node-cache';
 import { logger, errorLogger } from '../../shared/logger';
-import { recordCacheHit, recordCacheMiss } from '../middlewares/requestContext';
+import { recordCacheHit, recordCacheMiss } from '../logging/requestContext';
 
 export interface ICacheOptions {
   ttl?: number; // Time to live in seconds

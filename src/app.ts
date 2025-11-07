@@ -1,8 +1,8 @@
 import cors from 'cors';
 import YAML from 'yamljs';
 // Ensure DB metrics plugin loads BEFORE any models compile
-import './app/observability/mongooseMetrics';
-import './app/middlewares/autoLabelBootstrap';
+import './app/logging/mongooseMetrics';
+import './app/logging/autoLabelBootstrap';
 import router from './routes';
 import { Morgan } from './shared/morgen';
 import swaggerUi from 'swagger-ui-express';
@@ -10,10 +10,10 @@ import { StatusCodes } from 'http-status-codes';
 import express, { Request, Response } from 'express';
 import cookieParser from 'cookie-parser';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
-import { requestContextInit } from './app/middlewares/requestContext';
-import { clientInfo } from './app/middlewares/clientInfo';
+import { requestContextInit } from './app/logging/requestContext';
+import { clientInfo } from './app/logging/clientInfo';
 // import './config/passport';
-import { requestLogger } from './app/middlewares/requestLogger';
+import { requestLogger } from './app/logging/requestLogger';
 import path from 'path';
 import passport from 'passport';
 import { logger, errorLogger } from './shared/logger';

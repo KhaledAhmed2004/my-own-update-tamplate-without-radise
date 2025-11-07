@@ -8,17 +8,17 @@
 - Route/Controller/Service ফাইলে **extra wrapper বা label set** করার দরকার নেই — সবকিছু centrally auto হয়।
 
 ## High-Level Architecture
-- `AsyncLocalStorage`-ভিত্তিক request context: `src/app/middlewares/requestContext.ts`
+- `AsyncLocalStorage`-ভিত্তিক request context: `src/app/logging/requestContext.ts`
   - `setControllerLabel(label)`, `setServiceLabel(label)`, `getLabels()` — request scope-এ নাম রাখে।
   - `controllerNameFromBasePath(baseUrl)` — base path থেকে Controller নাম derive করে (plural→singular mapping সহ)।
-- Central bootstrap: `src/app/middlewares/autoLabelBootstrap.ts`
+- Central bootstrap: `src/app/logging/autoLabelBootstrap.ts`
   - Services ও Controllers-এর সব method dependency-free ভাবে wrap করা হয়।
   - Method call হলেই context-এ label set করে: `ControllerName.method`, `ServiceName.method`।
-- Request logger: `src/app/middlewares/requestLogger.ts`
+- Request logger: `src/app/logging/requestLogger.ts`
   - Response finish-এর সময় context থেকে label নিয়ে সুন্দরভাবে log ফরম্যাট করে।
   - যদি controller label না পাওয়া যায়, fallback হিসেবে base path + handler name দিয়ে derive করে।
 - App init order: `src/app.ts`
-  - `import './app/middlewares/autoLabelBootstrap'` **router bind হওয়ার আগেই** করা আছে।
+- `import './app/logging/autoLabelBootstrap'` **router bind হওয়ার আগেই** করা আছে।
   - `app.use(requestContextInit)` **requestLogger**-এর আগে।
 
 ## কিভাবে কাজ করে
@@ -57,7 +57,7 @@ export const PaymentController = {
 };
 ```
 
-3) Bootstrap-এ register করুন: `src/app/middlewares/autoLabelBootstrap.ts`
+3) Bootstrap-এ register করুন: `src/app/logging/autoLabelBootstrap.ts`
 
 ```ts
 import { PaymentService } from '../modules/payment/payment.service';
@@ -85,7 +85,7 @@ wrapController('PaymentController', PaymentController);
 
 ## Troubleshooting
 - Controller label `GET /` বা `POST /path` দেখাচ্ছে:
-  - Check করুন `src/app.ts`-এ `import './app/middlewares/autoLabelBootstrap'` **router import-এর আগেই** আছে।
+- Check করুন `src/app.ts`-এ `import './app/logging/autoLabelBootstrap'` **router import-এর আগেই** আছে।
   - Controller export pattern object-ভিত্তিক কিনা দেখুন (anonymous inline function pass করলে নাম resolve করা কঠিন)।
 - Service label show হচ্ছে না:
   - Bootstrap-এ `wrapService('YourService', YourService)` add হয়েছে কিনা দেখুন।
@@ -99,7 +99,7 @@ wrapController('PaymentController', PaymentController);
 - Webhook routes: `/api/v1/payments/webhook` raw body retain রাখা হয়, logger নিরাপদ summary দেখায়।
 
 ## Enable/Disable
-- পুরো auto-labeling বন্ধ করতে চাইলে `src/app.ts` থেকে `import './app/middlewares/autoLabelBootstrap'` comment/remove করুন।
+- পুরো auto-labeling বন্ধ করতে চাইলে `src/app.ts` থেকে `import './app/logging/autoLabelBootstrap'` comment/remove করুন।
 - Environment অনুযায়ী behaviour টিউন করতে পারেন (e.g., dev-এ বেশি details, prod-এ কম)।
 
 ## Best Practices
@@ -123,28 +123,31 @@ wrapController('PaymentController', PaymentController);
 ---
 
 ## Per-Request Metrics (DB/Cache/External)
-- Metrics store: `src/app/middlewares/requestContext.ts`
+- Metrics store: `src/app/logging/requestContext.ts`
   - `recordDbQuery(ms, { model?, operation?, cacheHit? })`, `recordCacheHit(ms)`, `recordCacheMiss(ms)`, `recordExternalCall(ms)` — প্রতি request-এর scope-এ metrics জমা হয়।
   - DB-এর জন্য `queries: { model?, operation?, durationMs, cacheHit }[]` আলাদা করে রাখা হয় — logger এগুলো থেকেই per-query details দেখায়।
   - `getMetrics()` দিয়ে logger metrics পড়ে।
-- Log output: `src/app/middlewares/requestLogger.ts`
+- Log output: `src/app/logging/requestLogger.ts`
   - Emoji + indentation সহ বিস্তারিত ব্লক প্রিন্ট হয়:
     - `🧮 DB Metrics` → `Hits` / `Avg Query Time` / `Slowest Query`
     - Categorized lists: `Fast ⚡ (<300ms)` / `Moderate ⏱️ (300–999ms)` / `Slow 🐌 (>=1000ms)`
-      - প্রতিটি লাইনে: `Model`, `Operation`, `Duration`, `Cache Hit`
+      - প্রতিটি লাইনে (একই order বজায় রেখে):
+        - `Model` → `Operation` → `Duration` → `Docs Examined` → `Index Used` → `Pipeline` → `Cache Hit` → `Suggestion` → `nReturned` → `Scan Efficiency` → `Execution Stage`
+      - `n/a` দেখায় যখন কোনও field apply না করে
+      - Slow query হলে `Suggestion` হাইলাইটেড থাকে (index তৈরির hint)
     - `🗄️ Cache Metrics` → `Hits` / `Misses` / `Hit Ratio`
     - `🌐 External API Calls` → `Count` / `Avg Response` / `Slowest Call`
     - শেষে `📊 Total Request Cost` এবং `⏱️ Processed in <X>ms` ক্যাটাগরি লেবেলসহ।
 
 ### DB Timing কীভাবে record হচ্ছে
 - `QueryBuilder` ও `AggregationBuilder`-এ instrumentation আছে (search/filter/pagination flow-এ)
-- Global Mongoose plugin: `src/app/observability/mongooseMetrics.ts`
+- Global Mongoose plugin: `src/app/logging/mongooseMetrics.ts`
   - Query ops: `find`, `findOne`, `countDocuments`, `findOneAndUpdate`, `update*`, `delete*`
   - Aggregation: `aggregate`
   - Document ops: `save` (এর মাধ্যমে `Model.create()` কভার হয়)
   - Error hooks: failed হলে-ও duration record হয়
 - গুরুত্বপূর্ণ: এই plugin টা **সকল schema compile হওয়ার আগেই** register হতে হবে।
-  - Fix: `src/app.ts`-এ `import './app/observability/mongooseMetrics'` উপরে রাখুন — `autoLabelBootstrap` ও `router`-এর আগেই।
+- Fix: `src/app.ts`-এ `import './app/logging/mongooseMetrics'` উপরে রাখুন — `autoLabelBootstrap` ও `router`-এর আগেই।
  - ডুপ্লিকেট/`n/a` এন্ট্রি এড়াতে:
    - `QueryBuilder.getFilteredResults()` থেকে manual `recordDbQuery()` কল সরানো হয়েছে — Mongoose plugin-ই `find` অপারেশন record করে।
    - অন্য যেকোনো manual রেকর্ডে `model`/`operation` metadata দিন।
@@ -178,12 +181,12 @@ wrapController('PaymentController', PaymentController);
     • Avg Query Time  : 48ms ⏱️
     • Slowest Query   : 48ms ⚡
  Fast Queries ⚡ (< 300ms):
- - Model: Notification, Operation: find, Duration: 48ms, Cache Hit: ❌
- - Model: Notification, Operation: countDocuments, Duration: 47ms, Cache Hit: ❌
+ - Model: Notification | Operation: find | Duration: 48ms | Docs Examined: n/a | Index Used: n/a | Pipeline: n/a | Cache Hit: ❌ | Suggestion: n/a | nReturned: 50 | Scan Efficiency: 0.004% ⚠️ (Poor) | Execution Stage: COLLSCAN (Full Collection Scan)
+ - Model: Notification | Operation: countDocuments | Duration: 47ms | Docs Examined: n/a | Index Used: n/a | Pipeline: n/a | Cache Hit: ❌ | Suggestion: n/a | nReturned: 1200 | Scan Efficiency: n/a | Execution Stage: n/a
  Moderate Queries ⏱️ (300–999ms):
  - None
  Slow Queries 🐌 (>= 1000ms):
- - None
+ - Model: Notification | Operation: aggregate | Duration: 1200ms | Docs Examined: 1.2M 😱 | Index Used: ❌ NO_INDEX | Pipeline: $match(type='email_delivery') → $group(_id='$userId') → $sort(userId) | Cache Hit: ❌ | Suggestion: createIndex({ type: 1 }) | nReturned: 150 | Scan Efficiency: 0.013% ⚠️ (Poor) | Execution Stage: COLLSCAN (Full Collection Scan)
  🗄️ Cache Metrics
     • Hits            : 0
     • Misses          : 0
@@ -201,7 +204,7 @@ wrapController('PaymentController', PaymentController);
 
 ## Troubleshooting (Metrics)
 - DB hits `0` দেখাচ্ছে অথচ create/save হচ্ছে:
-  - নিশ্চিত করুন `src/app.ts`-এ `import './app/observability/mongooseMetrics'` **সর্বপ্রথম** আছে।
+- নিশ্চিত করুন `src/app.ts`-এ `import './app/logging/mongooseMetrics'` **সর্বপ্রথম** আছে।
   - যদি কোনও ফাইল top-level-এ model import করে থাকে (e.g., bootstrap), plugin import order আগেই রাখতে হবে।
   - `Model.create()` save middleware hit করছে কিনা দেখুন; আমাদের plugin `save` pre/post হুক কভার করে।
   - Aggregation/Query custom util ব্যবহার করলে (`QueryBuilder`, `AggregationBuilder`) instrumentation আছে — কিন্তু pure `User.create()`/`User.findOneAndUpdate()` এর জন্য plugin দরকার।
@@ -214,10 +217,35 @@ wrapController('PaymentController', PaymentController);
 
 ## কী কী add/update হয়েছে (Summary)
 - Emoji-ভিত্তিক Metrics block: DB categories (Fast/Moderate/Slow) + summary `requestLogger`-এ।
-- Request context: DB `queries[]` যোগ — model/operation/duration/cacheHit per-query ট্র্যাকিং।
+- Request context: DB `queries[]`-এ enriched fields — `model`, `operation`, `durationMs`, `cacheHit`, `docsExamined`, `indexUsed`, `pipeline`, `suggestion`, `nReturned`, `executionStage`।
 - Cache instrumentation: `CacheHelper.get()`-এ hit/miss timing record।
 - External metrics: `recordExternalCall(ms)` ব্যবহার করে duration ট্র্যাক।
 - Mongoose plugin: `mongooseMetrics.ts` global plugin, query/aggregate/save timing + error coverage।
+
+### Scan Efficiency কীভাবে বের হয়
+- ফরমুলা: `Scan Efficiency = (nReturned / Docs Examined) * 100%`
+- Labeling:
+  - `🟢 (Excellent)` যদি ≥ 50%
+  - `⚡ (Good)` যদি ≥ 10%
+  - `⚠️ (Poor)` যদি < 10%
+- কোনও একটি মান (Docs Examined/nReturned) না থাকলে: `n/a`
+
+### Explain-Based Enrichment (Next Enhancement)
+- এখন থেকে Mongoose post hooks `explain('executionStats')` চালিয়ে per-query details enrich করে:
+  - `Docs Examined` → `executionStats.totalDocsExamined`
+  - `nReturned` → `executionStats.nReturned`
+  - `Execution Stage` → `queryPlanner.winningPlan.stage` বা nested `inputStage.stage`
+  - `Index Used` → `winningPlan.inputStage.indexName` থাকলে নাম, না থাকলে `INDEX`/`NO_INDEX` map করে
+- Aggregate queries-এর জন্য `pipeline` compact summary দেখানো থাকে (e.g., `$match(...) → $group(...) → $sort(...)`).
+- Production-এও safe — explain আলাদা lightweight call, মূল query এর পরে চালানো হয়।
+- Jekhonoi value পাওয়া না যায়, logger `n/a` দেখায় — কোনও field missing হলে output consistency বজায় থাকে।
+
+### Troubleshooting (Explain)
+- `Docs Examined: n/a` আসছে:
+  - কিছু অপারেশনে driver explain ব্যতিক্রম দেখাতে পারে — আবারও চেষ্টা করলে বা filter refine করলে আসতে পারে।
+  - Ensure MongoDB server `executionStats` support করছে (সাধারণত করে)।
+- `Execution Stage: n/a`:
+  - Nested stage resolve না হলে fallback `n/a` হয় — index name থাকলে `Index Used` populated হবে।
 - Import order fix: `src/app.ts`-এ metrics plugin import উপরে এনে সব schema cover করা।
 - Duplicate/n-a fix: `QueryBuilder.getFilteredResults()` থেকে manual record সরানো হয়েছে।
 
@@ -255,10 +283,10 @@ Server logs-এ এখন browser Client Hints ব্যবহার করে O
   - `Vary: Sec-CH-UA, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Arch, Sec-CH-UA-Bitness`
   - `Critical-CH: Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version`
   - Middleware order: `requestContextInit` → `clientInfo` → `requestLogger`।
-- `src/app/middlewares/clientInfo.ts`
+- `src/app/logging/clientInfo.ts`
   - Client Hints normalize করে `res.locals.clientInfo`-এ store করে: `os`, `osFriendly`, `osVersion`, `deviceType`, `deviceModel`, `arch`, `bitness`, `browser`, `browserVersion`, `ua`।
   - Windows mapping heuristic: `platformVersion` major ≥ 13 ⇒ `Windows 11`, else `Windows 10`।
-- `src/app/middlewares/requestLogger.ts`
+- `src/app/logging/requestLogger.ts`
   - নতুন লাইন add: `💻 Device: <deviceType>, OS: <osFriendly> (<osVersion>) ... Browser: <name> <version>`।
 
 ### Expected Log Example (Client Info)
@@ -293,8 +321,8 @@ Server logs-এ এখন browser Client Hints ব্যবহার করে O
 
 ### API/Code Reference
 - Headers middleware: `src/app.ts`
-- Client detection: `src/app/middlewares/clientInfo.ts`
-- Logger enrichment: `src/app/middlewares/requestLogger.ts`
+- Client detection: `src/app/logging/clientInfo.ts`
+- Logger enrichment: `src/app/logging/requestLogger.ts`
 
 ### Summary (Client Info)
 - Client Hints + UA fallback দিয়ে backend-only device/OS detection add করা হয়েছে।

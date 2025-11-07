@@ -454,16 +454,62 @@ export const requestLogger = (
           slow: queries.filter((q: any) => q?.durationMs >= 1000),
         };
 
+        const fmtDocs = (val: any): string => {
+          if (val === null || val === undefined) return 'n/a';
+          if (typeof val === 'string') return val;
+          if (typeof val !== 'number') return 'n/a';
+          const n = val;
+          if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M 😱`;
+          if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+          return String(n);
+        };
+        const fmtIndex = (val: any): string => {
+          if (!val) return 'n/a';
+          const s = String(val).toUpperCase();
+          if (s === 'NO_INDEX') return '❌ NO_INDEX';
+          if (s === 'INDEX') return '✅ INDEX';
+          return `✅ ${String(val)}`;
+        };
+        const deriveSuggestion = (q: any): string => {
+          const slow = q?.durationMs >= 1000;
+          const noIdx = String(q?.indexUsed || '').toUpperCase() === 'NO_INDEX';
+          const isAgg = String(q?.operation).toLowerCase() === 'aggregate';
+          if (!slow && !noIdx) return 'n/a';
+          if (isAgg && typeof q?.pipeline === 'string') {
+            const m = /\$match\(([^=]+)=/.exec(q.pipeline);
+            if (m && m[1]) return `createIndex({ ${m[1]}: 1 })`;
+          }
+          return 'add indexes on frequent filter fields';
+        };
+
+        const deriveScanEfficiency = (q: any): string => {
+          const docsExamined = typeof q?.docsExamined === 'number' ? q.docsExamined : undefined;
+          const nReturned = typeof q?.nReturned === 'number' ? q.nReturned : undefined;
+          if (!docsExamined || docsExamined <= 0 || !nReturned || nReturned < 0) return 'n/a';
+          const pct = (nReturned / docsExamined) * 100;
+          const pctStr = pct < 0.01 ? pct.toFixed(3) : pct < 1 ? pct.toFixed(3) : pct.toFixed(2);
+          const label = pct >= 50 ? '🟢 (Excellent)' : pct >= 10 ? '⚡ (Good)' : '⚠️ (Poor)';
+          return `${pctStr}% ${label}`;
+        };
+
+        const renderQueryLine = (q: any): string => {
+          const isAgg = String(q?.operation).toLowerCase() === 'aggregate';
+          const pipelineStr = isAgg ? q?.pipeline || 'n/a' : 'n/a';
+          const suggestion = deriveSuggestion(q);
+          const nReturnedStr = typeof q?.nReturned === 'number' ? String(q.nReturned) : 'n/a';
+          const scanEff = deriveScanEfficiency(q);
+          const execStage = q?.executionStage || 'n/a';
+          return colors.gray(
+            ` - Model: ${q.model || 'n/a'} | Operation: ${q.operation || 'n/a'} | Duration: ${q.durationMs}ms | Docs Examined: ${fmtDocs(q.docsExamined)} | Index Used: ${fmtIndex(q.indexUsed)} | Pipeline: ${pipelineStr} | Cache Hit: ${q.cacheHit ? '✅' : '❌'} | Suggestion: ${suggestion} | nReturned: ${nReturnedStr} | Scan Efficiency: ${scanEff} | Execution Stage: ${execStage}`
+          );
+        };
+
         lines.push(colors.bold(' Fast Queries ⚡ (< 300ms):'));
         if (!byCat.fast.length) {
           lines.push(colors.gray(' - None'));
         } else {
           byCat.fast.forEach((q: any) => {
-            lines.push(
-              colors.gray(
-                ` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`
-              )
-            );
+            lines.push(renderQueryLine(q));
           });
         }
 
@@ -472,11 +518,7 @@ export const requestLogger = (
           lines.push(colors.gray(' - None'));
         } else {
           byCat.moderate.forEach((q: any) => {
-            lines.push(
-              colors.gray(
-                ` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`
-              )
-            );
+            lines.push(renderQueryLine(q));
           });
         }
 
@@ -485,11 +527,8 @@ export const requestLogger = (
           lines.push(colors.gray(' - None'));
         } else {
           byCat.slow.forEach((q: any) => {
-            lines.push(
-              colors.gray(
-                ` - Model: ${q.model || 'n/a'}, Operation: ${q.operation || 'n/a'}, Duration: ${q.durationMs}ms, Cache Hit: ${q.cacheHit ? '✅' : '❌'}`
-              )
-            );
+            // For slow queries, pipeline and suggestion will be clearly visible via renderQueryLine
+            lines.push(renderQueryLine(q));
           });
         }
 

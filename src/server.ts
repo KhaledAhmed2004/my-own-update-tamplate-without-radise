@@ -48,7 +48,8 @@ async function main() {
         : (config.ip_address && String(config.ip_address).trim()) || '0.0.0.0';
 
     server = app.listen(port, host, () => {
-      logger.info(`♻️ Application listening on ${host}:${port}`);
+      const url = `http://${host}:${port}/`;
+      logger.info(`♻️ Application listening on ${url}`);
     });
     // handle listen errors gracefully
     server.on('error', (err: any) => {

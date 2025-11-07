@@ -1,5 +1,5 @@
 import { FilterQuery, Query } from 'mongoose';
-import { recordDbQuery } from '../middlewares/requestContext';
+import { recordDbQuery } from '../logging/requestContext';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 class QueryBuilder<T> {
