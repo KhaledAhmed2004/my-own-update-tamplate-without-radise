@@ -1,0 +1,34 @@
+sequenceDiagram
+    autonumber
+    participant C as 📱 Client
+    participant S as 🔌 Socket.IO
+    participant P as 👤 Presence
+    participant R as 📢 Chat Rooms
+
+    Note over C,R: 🔌 Disconnect Flow
+
+    C->>S: disconnect (connection lost/closed)
+
+    S->>P: updateLastActive(userId)
+    Note right of P: Record last seen time
+
+    S->>P: decrConnCount(userId)
+    P-->>S: remaining sessions count
+
+    alt Multiple Sessions Active (remaining > 0)
+        Note over S: User still online on other device
+        Note right of S: No offline broadcast
+    else Last Session (remaining = 0)
+        S->>P: setOffline(userId)
+
+        S->>P: getUserRooms(userId)
+        P-->>S: [chatId1, chatId2, ...]
+
+        loop For each chat room
+            S->>R: io.to('chat::' + chatId).emit('USER_OFFLINE')
+            R-->>R: {userId, chatId, lastActive}
+        end
+
+        S->>P: clearUserRooms(userId)
+        Note right of P: Clean up room tracking
+    end

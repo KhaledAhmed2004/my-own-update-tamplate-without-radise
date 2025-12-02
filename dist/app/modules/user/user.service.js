@@ -85,31 +85,6 @@ const getAllUsers = (query) => __awaiter(void 0, void 0, void 0, function* () {
         data: users,
     };
 });
-const resendVerifyEmailToDB = (email) => __awaiter(void 0, void 0, void 0, function* () {
-    const isExistUser = yield user_model_1.User.findOne({ email });
-    if (!isExistUser) {
-        throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "User doesn't exist!");
-    }
-    if (isExistUser.verified) {
-        throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'User is already verified!');
-    }
-    // Generate new OTP
-    const otp = (0, generateOTP_1.default)();
-    // Save OTP to DB
-    const authentication = {
-        oneTimeCode: otp,
-        expireAt: new Date(Date.now() + 3 * 60000), // 3 minutes
-    };
-    yield user_model_1.User.findOneAndUpdate({ email }, { $set: { authentication } });
-    // Send email
-    const emailData = emailTemplate_1.emailTemplate.createAccount({
-        name: isExistUser.name,
-        email: isExistUser.email,
-        otp,
-    });
-    yield emailHelper_1.emailHelper.sendEmail(emailData);
-    return { otp }; // optional: just for logging/debugging
-});
 const updateUserStatus = (id, status) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield user_model_1.User.isExistUserById(id);
     if (!user) {
@@ -138,7 +113,6 @@ exports.UserService = {
     getUserProfileFromDB,
     updateProfileToDB,
     getAllUsers,
-    resendVerifyEmailToDB,
     updateUserStatus,
     getUserById,
     getUserDetailsById,

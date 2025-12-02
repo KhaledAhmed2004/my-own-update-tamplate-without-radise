@@ -1,0 +1,123 @@
+{
+  "name": "senior-code-reviewer",
+  "displayName": "Senior Code Reviewer",
+  "description": "Code review like a top 1% senior engineer - pragmatic, production-focused feedback",
+  "version": "0.1.0",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "code review",
+    "linter",
+    "quality",
+    "architecture",
+    "typescript",
+    "javascript"
+  ],
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:javascript"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "seniorCodeReviewer.reviewCurrentFile",
+        "title": "Senior Code Reviewer: Review Current File",
+        "category": "Senior Code Reviewer"
+      },
+      {
+        "command": "seniorCodeReviewer.reviewWorkspace",
+        "title": "Senior Code Reviewer: Review Entire Workspace",
+        "category": "Senior Code Reviewer"
+      },
+      {
+        "command": "seniorCodeReviewer.fixAllIssues",
+        "title": "Senior Code Reviewer: Fix All Auto-fixable Issues",
+        "category": "Senior Code Reviewer"
+      },
+      {
+        "command": "seniorCodeReviewer.clearCache",
+        "title": "Senior Code Reviewer: Clear Cache",
+        "category": "Senior Code Reviewer"
+      }
+    ],
+    "configuration": {
+      "title": "Senior Code Reviewer",
+      "properties": {
+        "seniorCodeReviewer.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable the Senior Code Reviewer extension"
+        },
+        "seniorCodeReviewer.validateOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run code review when file is saved"
+        },
+        "seniorCodeReviewer.validateOnType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run code review while typing (may impact performance)"
+        },
+        "seniorCodeReviewer.severity": {
+          "type": "array",
+          "default": ["critical", "architecture", "over-engineering", "readability", "maintainability", "security", "scalability", "pragmatism"],
+          "description": "Severity levels to show",
+          "items": {
+            "type": "string",
+            "enum": ["critical", "architecture", "over-engineering", "readability", "maintainability", "security", "scalability", "pragmatism"]
+          }
+        },
+        "seniorCodeReviewer.excludePatterns": {
+          "type": "array",
+          "default": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**", "**/dist/**"],
+          "description": "File patterns to exclude from code review",
+          "items": {
+            "type": "string"
+          }
+        },
+        "seniorCodeReviewer.maxComplexity": {
+          "type": "number",
+          "default": 10,
+          "description": "Maximum allowed cyclomatic complexity"
+        },
+        "seniorCodeReviewer.maxFunctionLines": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum allowed lines per function"
+        },
+        "seniorCodeReviewer.showGoodPatterns": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show good pattern detections"
+        },
+        "seniorCodeReviewer.debugMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging to Output channel"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,15 @@
+erDiagram
+
+    CHAT {
+        ObjectId _id PK
+        EmbeddedArray participants "embedded[]"
+        Boolean status
+    }
+
+    CHAT_PARTICIPANTS {
+        Mixed type
+        Mixed ref
+    }
+    CHAT ||--o{ CHAT_PARTICIPANTS : "embeds"
+
+    %% Relationships

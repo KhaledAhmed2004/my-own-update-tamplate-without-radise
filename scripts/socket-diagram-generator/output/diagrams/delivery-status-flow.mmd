@@ -1,0 +1,67 @@
+sequenceDiagram
+    autonumber
+    participant Sender as 📱 Sender
+    participant S as 🔌 Socket.IO
+    participant DB as 🗄️ MongoDB
+    participant R as 📢 Chat Room
+    participant Receiver as 📱 Receiver
+
+    Note over Sender,Receiver: ✅ Message Delivery & Read Status Flow
+
+    rect rgb(240, 255, 240)
+        Note over Sender,Receiver: Phase 1: Message Sent
+        Note right of Sender: Message sent ✓ (single tick)
+    end
+
+    rect rgb(240, 248, 255)
+        Note over Sender,Receiver: Phase 2: Delivery Acknowledgement
+
+        Receiver->>S: emit('DELIVERED_ACK', {messageId})
+
+        S->>DB: Message.findById(messageId)
+
+        alt Message Not Found
+            DB-->>S: null
+            S-->>Receiver: emit('ACK_ERROR', {message: 'Message not found'})
+        else Message Found
+            DB-->>S: message {chatId, ...}
+
+            S->>DB: Chat.exists({_id: chatId, participants: userId})
+
+            alt Not Participant
+                DB-->>S: false
+                S-->>Receiver: emit('ACK_ERROR', {message: 'Not a participant'})
+            else Is Participant
+                DB-->>S: true
+
+                S->>DB: Message.findByIdAndUpdate(messageId, {$addToSet: {deliveredTo: userId}})
+                DB-->>S: updated message
+
+                S->>R: io.to('chat::' + chatId).emit('MESSAGE_DELIVERED')
+                R-->>Sender: on('MESSAGE_DELIVERED', {messageId, userId})
+                Note right of Sender: ✓✓ (double tick grey)
+            end
+        end
+    end
+
+    rect rgb(255, 248, 240)
+        Note over Sender,Receiver: Phase 3: Read Acknowledgement
+
+        Receiver->>S: emit('READ_ACK', {messageId})
+
+        S->>DB: Message.findById(messageId)
+        DB-->>S: message {chatId, ...}
+
+        S->>DB: Chat.exists({_id: chatId, participants: userId})
+
+        alt Is Participant
+            DB-->>S: true
+
+            S->>DB: Message.findByIdAndUpdate(messageId, {$addToSet: {readBy: userId}})
+            DB-->>S: updated message
+
+            S->>R: io.to('chat::' + chatId).emit('MESSAGE_READ')
+            R-->>Sender: on('MESSAGE_READ', {messageId, userId})
+            Note right of Sender: ✓✓ (double tick blue)
+        end
+    end

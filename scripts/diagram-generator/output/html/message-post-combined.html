@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POST / → Socket.IO - Combined Flow Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .method-badge {
+            font-size: 14px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .method-get { background: #28a745; color: white; }
+        .method-post { background: #007bff; color: white; }
+        .method-put { background: #ffc107; color: #333; }
+        .method-patch { background: #17a2b8; color: white; }
+        .method-delete { background: #dc3545; color: white; }
+
+        .socket-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .info-card {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .info-card h4 {
+            margin: 0 0 10px 0;
+            color: #555;
+            font-size: 14px;
+        }
+        .info-card p {
+            margin: 0;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .socket-events-section, .flow-trace-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .socket-events-section h3, .flow-trace-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .events-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .events-table th, .events-table td {
+            padding: 10px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .events-table th {
+            background: #667eea;
+            color: white;
+        }
+        .events-table code {
+            background: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+        }
+        .event-type {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .event-type.room-emit { background: #d4edda; color: #155724; }
+        .event-type.user-emit { background: #cce5ff; color: #004085; }
+        .event-type.broadcast { background: #fff3cd; color: #856404; }
+
+        .flow-items {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        .flow-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .flow-item.socket {
+            background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%);
+            border: 1px solid #667eea;
+        }
+        .flow-number {
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .flow-arrow {
+            color: #667eea;
+            font-size: 18px;
+            margin-left: 40px;
+        }
+
+        .mermaid {
+            margin-top: 25px;
+            padding: 25px;
+            background: #fafafa;
+            border-radius: 10px;
+            border: 1px solid #eee;
+            overflow-x: auto;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+            color: white;
+        }
+        .code-section {
+            margin-top: 30px;
+            display: none;
+        }
+        .code-section.show { display: block; }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre;
+        }
+        .copied-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            display: none;
+            animation: fadeIn 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+            z-index: 1000;
+        }
+        .copied-toast.show { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span class="method-badge method-post">POST</span>
+            <span>/</span>
+            <span class="socket-badge">🔌 + Socket.IO</span>
+        </h1>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <h4>🎮 Controller</h4>
+                <p>MessageController.sendMessage()</p>
+            </div>
+            <div class="info-card">
+                <h4>⚙️ Service</h4>
+                <p>MessageService.sendMessageToDB()</p>
+            </div>
+            <div class="info-card">
+                <h4>🔌 Socket Events</h4>
+                <p>1 event(s) emitted</p>
+            </div>
+            <div class="info-card">
+                <h4>📅 Generated</h4>
+                <p>11/28/2025, 5:06:59 AM</p>
+            </div>
+        </div>
+
+        
+        <div class="socket-events-section">
+          <h3>🔌 Socket.IO Events Emitted</h3>
+          <table class="events-table">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Type</th>
+                <th>Target</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td><code>MESSAGE_SENT</code></td>
+                  <td><span class="event-type room-emit">room-emit</span></td>
+                  <td>chat::{chatId}</td>
+                </tr>
+              
+            </tbody>
+          </table>
+        </div>
+      
+        
+        <div class="flow-trace-section">
+          <h3>📍 Execution Flow</h3>
+          <div class="flow-items">
+            
+                  <div class="flow-item controller">
+                    <span class="flow-number">1</span>
+                    <span class="flow-icon">🎮</span>
+                    <span class="flow-content">MessageController.sendMessage</span>
+                  </div>
+                  <div class="flow-arrow">↓</div>
+                
+                  <div class="flow-item service">
+                    <span class="flow-number">2</span>
+                    <span class="flow-icon">⚙️</span>
+                    <span class="flow-content">MessageService.sendMessageToDB</span>
+                  </div>
+                  <div class="flow-arrow">↓</div>
+                
+                  <div class="flow-item socket">
+                    <span class="flow-number">3</span>
+                    <span class="flow-icon">🔌</span>
+                    <span class="flow-content">emit('MESSAGE_SENT')</span>
+                  </div>
+                  
+                
+          </div>
+        </div>
+      
+
+        <div class="actions">
+            <a href="https://mermaid.live/edit#base64:eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgYXV0b251bWJlclxuXG4gICAgcGFydGljaXBhbnQgQ2xpZW50IGFzIPCfk7EgQ2xpZW50XG4gICAgcGFydGljaXBhbnQgUm91dGUgYXMg8J-bpO-4jyBSb3V0ZVxuICAgIHBhcnRpY2lwYW50IENvbnRyb2xsZXIgYXMg8J-OriBDb250cm9sbGVyXG4gICAgcGFydGljaXBhbnQgU2VydmljZSBhcyDimpnvuI8gU2VydmljZVxuICAgIHBhcnRpY2lwYW50IERhdGFiYXNlIGFzIPCfl4TvuI8gRGF0YWJhc2VcbiAgICBwYXJ0aWNpcGFudCBTb2NrZXRJTyBhcyDwn5SMIFNvY2tldC5JT1xuICAgIHBhcnRpY2lwYW50IENvbm5lY3RlZENsaWVudHMgYXMg8J-RpSBDb25uZWN0ZWQgQ2xpZW50c1xuXG4gICAgTm90ZSBvdmVyIENsaWVudCxDb25uZWN0ZWRDbGllbnRzOiDwn5SXIFBPU1QgLyDihpIgU29ja2V0LklPIEZsb3dcblxuICAgIENsaWVudC0-PitSb3V0ZTogUE9TVCAvXG4gICAgTm90ZSByaWdodCBvZiBSb3V0ZTogTWlkZGxld2FyZSBDaGFpblxuICAgIFJvdXRlLT4-Um91dGU6IPCflJAgYXV0aChVU0VSX1JPTEVTLlRBU0tFUiwgVVNFUl9ST0xFUy5QT1NURVIpXG4gICAgUm91dGUtPj4rQ29udHJvbGxlcjogTWVzc2FnZUNvbnRyb2xsZXIuc2VuZE1lc3NhZ2UoKVxuICAgIENvbnRyb2xsZXItPj4rU2VydmljZTogTWVzc2FnZVNlcnZpY2Uuc2VuZE1lc3NhZ2VUb0RCKClcbiAgICBTZXJ2aWNlLT4-K0RhdGFiYXNlOiBDaGF0LmZpbmRCeUlkKClcbiAgICBEYXRhYmFzZS0tPj4tU2VydmljZTogcmVzdWx0XG4gICAgU2VydmljZS0-PitEYXRhYmFzZTogTWVzc2FnZS5jcmVhdGUoKVxuICAgIERhdGFiYXNlLS0-Pi1TZXJ2aWNlOiByZXN1bHRcblxuICAgIE5vdGUgb3ZlciBTZXJ2aWNlLENvbm5lY3RlZENsaWVudHM6IPCflIwgUmVhbC10aW1lIFNvY2tldC5JTyBFdmVudHNcblxuICAgIFNlcnZpY2UtPj5Tb2NrZXRJTzogZW1pdCgnTUVTU0FHRV9TRU5UJylcbiAgICBOb3RlIHJpZ2h0IG9mIFNvY2tldElPOiBSb29tOiBjaGF0Ojp7Y2hhdElkfVxuICAgIFNvY2tldElPLS0-PkNvbm5lY3RlZENsaWVudHM6IE1FU1NBR0VfU0VOVCDihpIgcm9vbVxuXG4gICAgU2VydmljZS0tPj4tQ29udHJvbGxlcjogcmVzdWx0XG4gICAgQ29udHJvbGxlci0tPj4tUm91dGU6IHJlc3BvbnNlXG4gICAgUm91dGUtLT4-LUNsaWVudDogSFRUUCBSZXNwb25zZVxuIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifSwiYXV0b1N5bmMiOnRydWUsInVwZGF0ZURpYWdyYW0iOnRydWV9" target="_blank" class="btn btn-primary">
+                🌐 Mermaid Live Editor
+            </a>
+            <button onclick="copyCode()" class="btn btn-success">
+                📋 Copy Code
+            </button>
+            <button onclick="toggleCode()" class="btn btn-secondary">
+                👁️ Show/Hide Code
+            </button>
+        </div>
+
+        <div class="mermaid">
+sequenceDiagram
+    autonumber
+
+    participant Client as 📱 Client
+    participant Route as 🛤️ Route
+    participant Controller as 🎮 Controller
+    participant Service as ⚙️ Service
+    participant Database as 🗄️ Database
+    participant SocketIO as 🔌 Socket.IO
+    participant ConnectedClients as 👥 Connected Clients
+
+    Note over Client,ConnectedClients: 🔗 POST / → Socket.IO Flow
+
+    Client->>+Route: POST /
+    Note right of Route: Middleware Chain
+    Route->>Route: 🔐 auth(USER_ROLES.TASKER, USER_ROLES.POSTER)
+    Route->>+Controller: MessageController.sendMessage()
+    Controller->>+Service: MessageService.sendMessageToDB()
+    Service->>+Database: Chat.findById()
+    Database-->>-Service: result
+    Service->>+Database: Message.create()
+    Database-->>-Service: result
+
+    Note over Service,ConnectedClients: 🔌 Real-time Socket.IO Events
+
+    Service->>SocketIO: emit('MESSAGE_SENT')
+    Note right of SocketIO: Room: chat::{chatId}
+    SocketIO-->>ConnectedClients: MESSAGE_SENT → room
+
+    Service-->>-Controller: result
+    Controller-->>-Route: response
+    Route-->>-Client: HTTP Response
+
+        </div>
+
+        <div class="code-section" id="codeSection">
+            <h3>📝 Mermaid Code</h3>
+            <div class="code-block" id="mermaidCode">sequenceDiagram
+    autonumber
+
+    participant Client as 📱 Client
+    participant Route as 🛤️ Route
+    participant Controller as 🎮 Controller
+    participant Service as ⚙️ Service
+    participant Database as 🗄️ Database
+    participant SocketIO as 🔌 Socket.IO
+    participant ConnectedClients as 👥 Connected Clients
+
+    Note over Client,ConnectedClients: 🔗 POST / → Socket.IO Flow
+
+    Client-&gt;&gt;+Route: POST /
+    Note right of Route: Middleware Chain
+    Route-&gt;&gt;Route: 🔐 auth(USER_ROLES.TASKER, USER_ROLES.POSTER)
+    Route-&gt;&gt;+Controller: MessageController.sendMessage()
+    Controller-&gt;&gt;+Service: MessageService.sendMessageToDB()
+    Service-&gt;&gt;+Database: Chat.findById()
+    Database--&gt;&gt;-Service: result
+    Service-&gt;&gt;+Database: Message.create()
+    Database--&gt;&gt;-Service: result
+
+    Note over Service,ConnectedClients: 🔌 Real-time Socket.IO Events
+
+    Service-&gt;&gt;SocketIO: emit(&#039;MESSAGE_SENT&#039;)
+    Note right of SocketIO: Room: chat::{chatId}
+    SocketIO--&gt;&gt;ConnectedClients: MESSAGE_SENT → room
+
+    Service--&gt;&gt;-Controller: result
+    Controller--&gt;&gt;-Route: response
+    Route--&gt;&gt;-Client: HTTP Response
+</div>
+        </div>
+    </div>
+
+    <div class="copied-toast" id="toast">✅ Code copied to clipboard!</div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35,
+                mirrorActors: true,
+                useMaxWidth: true
+            }
+        });
+
+        const rawMermaidCode = `sequenceDiagram
+    autonumber
+
+    participant Client as 📱 Client
+    participant Route as 🛤️ Route
+    participant Controller as 🎮 Controller
+    participant Service as ⚙️ Service
+    participant Database as 🗄️ Database
+    participant SocketIO as 🔌 Socket.IO
+    participant ConnectedClients as 👥 Connected Clients
+
+    Note over Client,ConnectedClients: 🔗 POST / → Socket.IO Flow
+
+    Client->>+Route: POST /
+    Note right of Route: Middleware Chain
+    Route->>Route: 🔐 auth(USER_ROLES.TASKER, USER_ROLES.POSTER)
+    Route->>+Controller: MessageController.sendMessage()
+    Controller->>+Service: MessageService.sendMessageToDB()
+    Service->>+Database: Chat.findById()
+    Database-->>-Service: result
+    Service->>+Database: Message.create()
+    Database-->>-Service: result
+
+    Note over Service,ConnectedClients: 🔌 Real-time Socket.IO Events
+
+    Service->>SocketIO: emit('MESSAGE_SENT')
+    Note right of SocketIO: Room: chat::{chatId}
+    SocketIO-->>ConnectedClients: MESSAGE_SENT → room
+
+    Service-->>-Controller: result
+    Controller-->>-Route: response
+    Route-->>-Client: HTTP Response
+`;
+
+        function copyCode() {
+            navigator.clipboard.writeText(rawMermaidCode).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            });
+        }
+
+        function toggleCode() {
+            const section = document.getElementById('codeSection');
+            section.classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

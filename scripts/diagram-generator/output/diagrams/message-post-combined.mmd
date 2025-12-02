@@ -1,0 +1,32 @@
+sequenceDiagram
+    autonumber
+
+    participant Client as 📱 Client
+    participant Route as 🛤️ Route
+    participant Controller as 🎮 Controller
+    participant Service as ⚙️ Service
+    participant Database as 🗄️ Database
+    participant SocketIO as 🔌 Socket.IO
+    participant ConnectedClients as 👥 Connected Clients
+
+    Note over Client,ConnectedClients: 🔗 POST / → Socket.IO Flow
+
+    Client->>+Route: POST /
+    Note right of Route: Middleware Chain
+    Route->>Route: 🔐 auth(USER_ROLES.TASKER, USER_ROLES.POSTER)
+    Route->>+Controller: MessageController.sendMessage()
+    Controller->>+Service: MessageService.sendMessageToDB()
+    Service->>+Database: Chat.findById()
+    Database-->>-Service: result
+    Service->>+Database: Message.create()
+    Database-->>-Service: result
+
+    Note over Service,ConnectedClients: 🔌 Real-time Socket.IO Events
+
+    Service->>SocketIO: emit('MESSAGE_SENT')
+    Note right of SocketIO: Room: chat::{chatId}
+    SocketIO-->>ConnectedClients: MESSAGE_SENT → room
+
+    Service-->>-Controller: result
+    Controller-->>-Route: response
+    Route-->>-Client: HTTP Response

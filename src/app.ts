@@ -1,12 +1,37 @@
 import cors from 'cors';
 import YAML from 'yamljs';
-// Ensure DB metrics plugin loads BEFORE any models compile
+
+/**
+ * ⚠️ CRITICAL IMPORT ORDER - DO NOT REORDER ⚠️
+ *
+ * The order below is carefully designed to prevent subtle bugs.
+ * Changing this order can break auto-labeling, metrics, or cause runtime errors.
+ *
+ * Why this order matters:
+ * 1. mongooseMetrics must load BEFORE any models compile (plugins must register first)
+ * 2. autoLabelBootstrap must load BEFORE routes import controllers/services
+ * 3. opentelemetry should load early for proper instrumentation
+ * 4. Third-party patches (bcrypt, JWT, Stripe) must load before their usage
+ * 5. Routes load LAST (they import controllers which need auto-labeling ready)
+ *
+ * See loadOrderValidator.ts for runtime validation.
+ */
+
+// 1️⃣ FIRST: Mongoose metrics plugin (BEFORE any models compile)
 import './app/logging/mongooseMetrics';
+
+// 2️⃣ SECOND: Auto-labeling system (BEFORE routes import controllers)
 import './app/logging/autoLabelBootstrap';
+
+// 3️⃣ THIRD: OpenTelemetry instrumentation
 import './app/logging/opentelemetry';
+
+// 4️⃣ FOURTH: Third-party library patches
 import './app/logging/patchBcrypt';
 import './app/logging/patchJWT';
 import './app/logging/patchStripe';
+
+// 5️⃣ LAST: Routes (imports controllers/services - auto-labeling must be ready)
 import router from './routes';
 import { Morgan } from './shared/morgen';
 import swaggerUi from 'swagger-ui-express';

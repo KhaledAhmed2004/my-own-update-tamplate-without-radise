@@ -1,6 +1,10 @@
 import mongoose, { Schema } from 'mongoose';
 import { recordDbQuery } from './requestContext';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { LoadOrderValidator } from './loadOrderValidator';
+
+// This must be the FIRST module to load (before any models compile)
+LoadOrderValidator.markLoaded('MONGOOSE_METRICS', 'mongooseMetrics.ts');
 
 function getModelName(self: any): string | undefined {
   return (
@@ -10,6 +14,67 @@ function getModelName(self: any): string | undefined {
     self?.modelName ||
     undefined
   );
+}
+
+// 🆕 NEW: Mask sensitive data in query filters
+function maskSensitiveData(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  const sensitiveFields = ['password', 'token', 'apiKey', 'secret', 'accessToken', 'refreshToken', 'authorization'];
+  const result: any = Array.isArray(obj) ? [] : {};
+
+  for (const key in obj) {
+    const lowerKey = key.toLowerCase();
+    const isSensitive = sensitiveFields.some(field => lowerKey.includes(field.toLowerCase()));
+
+    if (isSensitive) {
+      result[key] = '***MASKED***';
+    } else if (obj[key] && typeof obj[key] === 'object') {
+      result[key] = maskSensitiveData(obj[key]);
+    } else {
+      result[key] = obj[key];
+    }
+  }
+
+  return result;
+}
+
+// 🆕 NEW: Extract caller location from stack trace
+function getCallerLocation(): string | undefined {
+  try {
+    const err = new Error();
+    const stack = err.stack;
+    if (!stack) return undefined;
+
+    const lines = stack.split('\n');
+    // Find the first line that's NOT in mongooseMetrics.ts or node_modules
+    for (const line of lines) {
+      if (line.includes('mongooseMetrics.ts') ||
+          line.includes('node_modules') ||
+          line.includes('at Object.') ||
+          line.includes('at Function.') ||
+          !line.includes('at ')) {
+        continue;
+      }
+
+      // Extract file path and line number
+      // Example: "    at UserService.createUser (d:\path\to\user.service.ts:89:15)"
+      const match = line.match(/\((.+):(\d+):\d+\)/) || line.match(/at (.+):(\d+):\d+/);
+      if (match) {
+        const fullPath = match[1];
+        const lineNumber = match[2];
+
+        // Extract just filename from full path
+        const parts = fullPath.split(/[/\\]/);
+        const filename = parts[parts.length - 1];
+
+        return `${filename}:${lineNumber}`;
+      }
+    }
+  } catch {
+    // Silent failure
+  }
+  return undefined;
 }
 
 const preStart = (op: string) =>
@@ -30,6 +95,78 @@ const postEnd = (op: string) =>
     const start = this.__metricsStart || Date.now();
     const dur = Date.now() - start;
     const model = getModelName(this);
+
+    // 🆕 NEW: Detect operation context for completion message
+    let completionMessage: string | undefined;
+    try {
+      // For User.findOne during login, check if password field was queried
+      if (op === 'findOne' && model === 'User' && _res) {
+        const filter = (typeof (this as any).getFilter === 'function' ? (this as any).getFilter() : (this as any)._conditions) || {};
+
+        // If querying by email (login scenario) and document found
+        if (filter.email && _res) {
+          completionMessage = 'User found for authentication';
+        }
+      }
+
+      // For successful saves
+      if (op === 'save' && _res) {
+        completionMessage = 'Document saved successfully';
+      }
+
+      // For updates
+      if ((op === 'updateOne' || op === 'updateMany') && _res) {
+        const count = _res.modifiedCount || 0;
+        completionMessage = `Updated ${count} document(s)`;
+      }
+    } catch {}
+
+    // 🆕 NEW: Capture query details (filter, sort, projection, limit, skip)
+    let filterStr: string | undefined;
+    let sortStr: string | undefined;
+    let projectionStr: string | undefined;
+    let limitVal: number | undefined;
+    let skipVal: number | undefined;
+    let callerLocation: string | undefined;
+
+    try {
+      // Capture caller location
+      callerLocation = getCallerLocation();
+
+      // Capture filter
+      const filter = (typeof (this as any).getFilter === 'function' ? (this as any).getFilter() : (this as any)._conditions) || {};
+      if (filter && Object.keys(filter).length > 0) {
+        const masked = maskSensitiveData(filter);
+        filterStr = JSON.stringify(masked);
+      }
+
+      // Capture sort
+      const sort = (this as any).options?.sort || (this as any)._mongooseOptions?.sort;
+      if (sort && Object.keys(sort).length > 0) {
+        sortStr = JSON.stringify(sort);
+      }
+
+      // Capture projection
+      const projection = (this as any)._fields || (this as any).projection?.();
+      if (projection && Object.keys(projection).length > 0) {
+        projectionStr = JSON.stringify(projection);
+      }
+
+      // Capture limit
+      const limit = (this as any).options?.limit || (this as any)._mongooseOptions?.limit;
+      if (typeof limit === 'number' && limit > 0) {
+        limitVal = limit;
+      }
+
+      // Capture skip
+      const skip = (this as any).options?.skip || (this as any)._mongooseOptions?.skip;
+      if (typeof skip === 'number' && skip > 0) {
+        skipVal = skip;
+      }
+    } catch {
+      // Silent failure for query details capture
+    }
+
     // Capture aggregate pipeline summary when applicable
     let pipeline: string | undefined;
     if (op === 'aggregate' && typeof this?.pipeline === 'function') {
@@ -87,15 +224,32 @@ const postEnd = (op: string) =>
         }
       }
     } catch {}
-    // Index suggestion (basic): if COLLSCAN or docsExamined >> nReturned
+    // 🆕 ENHANCED: Index suggestion with exact MongoDB command
     let suggestion: string | undefined;
     try {
       const conds = (this as any)._conditions || (typeof (this as any).getFilter === 'function' ? (this as any).getFilter() : undefined);
       const keys = conds && typeof conds === 'object' ? Object.keys(conds) : [];
-      const idxFields = keys.slice(0, 3).map(k => `${k}: 1`).join(', ');
+
+      // Include sort fields in index suggestion
+      const sort = (this as any).options?.sort || (this as any)._mongooseOptions?.sort;
+      const sortKeys = sort && typeof sort === 'object' ? Object.keys(sort) : [];
+
+      // Combine filter keys and sort keys for compound index
+      const allKeys = Array.from(new Set([...keys, ...sortKeys])); // Remove duplicates
+      const idxFields = allKeys.slice(0, 3).map(k => {
+        // Use -1 for descending sort, 1 for ascending or filter fields
+        const sortDir = sort && sort[k] === -1 ? -1 : 1;
+        return `${k}: ${sortDir}`;
+      }).join(', ');
+
       const efficiency = nReturned && docsExamined ? `${docsExamined}:${nReturned}` : undefined;
+
       if (!indexUsed || indexUsed === 'NO_INDEX' || (docsExamined && nReturned && docsExamined > nReturned * 50)) {
-        suggestion = idxFields ? `Create compound index on { ${idxFields} }` : undefined;
+        if (idxFields && model) {
+          // Generate exact MongoDB command
+          const collectionName = model.toLowerCase() + 's'; // Pluralize (basic)
+          suggestion = `db.${collectionName}.createIndex({ ${idxFields} })`;
+        }
       }
       // Attach attributes to OTel span
       if (this.__otelSpan) {
@@ -109,12 +263,35 @@ const postEnd = (op: string) =>
           if (executionStage) this.__otelSpan.setAttribute('db.execution_stage', executionStage);
           if (efficiency) this.__otelSpan.setAttribute('db.scan_efficiency', efficiency);
           if (suggestion) this.__otelSpan.setAttribute('db.index_suggestion', suggestion);
+
+          // 🆕 NEW: Add completion message attribute
+          if (completionMessage) {
+            this.__otelSpan.setAttribute('db.completion_message', completionMessage);
+          }
+
           this.__otelSpan.end();
         } catch {}
       }
     } catch {}
 
-    recordDbQuery(dur, { model, operation: op, cacheHit: false, pipeline, nReturned, docsExamined, indexUsed, executionStage, suggestion });
+    // 🆕 NEW: Include enhanced query details in recordDbQuery
+    recordDbQuery(dur, {
+      model,
+      operation: op,
+      cacheHit: false,
+      pipeline,
+      nReturned,
+      docsExamined,
+      indexUsed,
+      executionStage,
+      suggestion,
+      filter: filterStr,
+      sort: sortStr,
+      projection: projectionStr,
+      limit: limitVal,
+      skip: skipVal,
+      callerLocation,
+    });
     next();
   };
 

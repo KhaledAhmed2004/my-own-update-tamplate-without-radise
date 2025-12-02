@@ -1,0 +1,28 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Auth_Middleware
+    participant Controller
+    participant Service
+    participant Database
+
+    Client->>+Route: POST /:otherUserId
+    Route->>+Auth_Middleware: Validate
+    Note over Auth_Middleware: 🔐 Authentication&#58; JWT token verify করা হচ্ছে
+    Note over Auth_Middleware: Roles&#58; USER_ROLES.TASKER, USER_ROLES.POSTER
+    Auth_Middleware->>-Route: Valid ✓
+    Route->>+Controller: ChatController.createChat
+    Controller->>+Service: ChatService.createChatToDB()
+    Service->>+Database: Chat.findOne({
+    participants: { $all: payload },
+  })
+    Note over Database: 💾 Database Query&#58; MongoDB থেকে data fetch করা হচ্ছে
+    Database->>-Service: result
+    Service->>+Database: Chat.create({ participants: payload })
+    Note over Database: 💾 Database Query&#58; MongoDB থেকে data fetch করা হচ্ছে
+    Database->>-Service: result
+    Service->>-Controller: result
+    Controller->>-Route: StatusCodes.CREATED - Create Chat Successfully
+    Route-->>Client: Response
+    Note over Client: ✅ Create Chat Successfully

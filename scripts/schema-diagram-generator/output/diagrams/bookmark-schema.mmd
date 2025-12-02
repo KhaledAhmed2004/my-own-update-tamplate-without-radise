@@ -1,0 +1,11 @@
+erDiagram
+
+    BOOKMARK {
+        ObjectId _id PK
+        ObjectId user FK "required, ref: User"
+        ObjectId target "required, polymorphic: dynamic"
+        String targetModel "required"
+    }
+
+    %% Relationships
+    %% BOOKMARK -> USER (user) - target not found

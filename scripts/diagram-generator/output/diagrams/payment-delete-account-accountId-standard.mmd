@@ -1,0 +1,16 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Auth_Middleware
+    participant Controller
+
+    Client->>+Route: DELETE /account/:accountId
+    Route->>+Auth_Middleware: Validate
+    Note over Auth_Middleware: 🔐 Authentication&#58; JWT token verify করা হচ্ছে
+    Note over Auth_Middleware: Roles&#58; USER_ROLES.SUPER_ADMIN
+    Auth_Middleware->>-Route: Valid ✓
+    Route->>+Controller: PaymentController.deleteStripeAccountController
+    Controller->>-Route: 200 OK - Stripe account deleted successfully
+    Route-->>Client: Response
+    Note over Client: ✅ Stripe account deleted successfully

@@ -1,0 +1,79 @@
+sequenceDiagram
+    autonumber
+    participant C as 📱 Client
+    participant S as 🔌 Socket.IO
+    participant A as 🔐 Auth
+    participant DB as 🗄️ MongoDB
+    participant P as 👤 Presence
+    participant R as 📢 Room
+    participant O as 👥 Others
+
+    Note over C,O: 📋 Complete Socket.IO Event Flow
+
+    %% ===== CONNECTION =====
+    rect rgb(230, 255, 230)
+        Note over C,O: 🔗 Phase 1: Connection
+        C->>S: connect({auth: {token}})
+        S->>A: verifyToken(token)
+        A-->>S: ✅ {id: userId}
+        S->>P: setOnline(userId)
+        S->>P: incrConnCount(userId)
+        S->>S: socket.join('user::userId')
+    end
+
+    %% ===== JOIN CHAT =====
+    rect rgb(230, 240, 255)
+        Note over C,O: 🚪 Phase 2: Join Chat Room
+        C->>S: emit('JOIN_CHAT', {chatId})
+        S->>DB: Chat.exists({participants: userId})
+        DB-->>S: ✅ true
+        S->>S: socket.join('chat::chatId')
+        S->>P: addUserRoom(userId, chatId)
+        S->>R: emit('USER_ONLINE', {userId, chatId})
+        R-->>O: User joined notification
+    end
+
+    %% ===== SEND MESSAGE =====
+    rect rgb(255, 250, 230)
+        Note over C,O: 💬 Phase 3: Send Message
+        C->>S: POST /api/v1/message
+        S->>DB: Message.create({...})
+        DB-->>S: message saved
+        S->>R: emit('MESSAGE_SENT', {message})
+        R-->>O: New message notification
+    end
+
+    %% ===== TYPING =====
+    rect rgb(240, 230, 255)
+        Note over C,O: ⌨️ Phase 4: Typing
+        C->>S: emit('TYPING_START', {chatId})
+        S->>R: emit('TYPING_START', {userId})
+        R-->>O: Shows typing indicator
+        C->>S: emit('TYPING_STOP', {chatId})
+        S->>R: emit('TYPING_STOP', {userId})
+    end
+
+    %% ===== DELIVERY/READ =====
+    rect rgb(230, 255, 240)
+        Note over C,O: ✅ Phase 5: Delivery & Read
+        O->>S: emit('DELIVERED_ACK', {messageId})
+        S->>DB: Update deliveredTo[]
+        S->>R: emit('MESSAGE_DELIVERED')
+        R-->>C: ✓✓ (grey)
+        O->>S: emit('READ_ACK', {messageId})
+        S->>DB: Update readBy[]
+        S->>R: emit('MESSAGE_READ')
+        R-->>C: ✓✓ (blue)
+    end
+
+    %% ===== LEAVE & DISCONNECT =====
+    rect rgb(255, 230, 230)
+        Note over C,O: 🔌 Phase 6: Leave & Disconnect
+        C->>S: emit('LEAVE_CHAT', {chatId})
+        S->>S: socket.leave('chat::chatId')
+        S->>R: emit('USER_OFFLINE', {userId})
+        R-->>O: User left notification
+        C->>S: disconnect
+        S->>P: decrConnCount(userId)
+        S->>P: setOffline(userId)
+    end

@@ -1,0 +1,4537 @@
+{
+  "info": {
+    "name": "Complete API Collection",
+    "description": "All API modules with smart authentication and auto-saved variables",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth Module",
+      "item": [
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/login",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{TEST_EMAIL}}\",\n  \"password\": \"{{TEST_PASSWORD}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/auth/login",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔐 Authentication Tests",
+                  "pm.test(\"✓ Access token received\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"accessToken\");",
+                  "    pm.expect(response.data.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(response.data.accessToken.length).to.be.above(20);",
+                  "    ",
+                  "    // Auto-save token for subsequent requests",
+                  "    pm.collectionVariables.set(\"accessToken\", response.data.accessToken);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Refresh token received\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"refreshToken\");",
+                  "    pm.collectionVariables.set(\"refreshToken\", response.data.refreshToken);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ User data included\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"user\");",
+                  "    pm.expect(response.data.user).to.have.property(\"_id\");",
+                  "    pm.expect(response.data.user).to.have.property(\"email\");",
+                  "    ",
+                  "    // Save user ID",
+                  "    pm.collectionVariables.set(\"userId\", response.data.user._id);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Password not exposed in response\", () => {",
+                  "    const responseBody = pm.response.text();",
+                  "    pm.expect(responseBody.toLowerCase()).to.not.include(\"password\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_auth_login_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_auth_login_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Google OAuth Login",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/google",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "google"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/auth/google",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ List retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Pagination metadata exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"pagination\");",
+                  "    pm.expect(response.pagination).to.have.property(\"total\");",
+                  "    pm.expect(response.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_auth_google_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_auth_google_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Google OAuth Callback",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/google/callback",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "google",
+                "callback"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/auth/google/callback",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ List retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Pagination metadata exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"pagination\");",
+                  "    pm.expect(response.pagination).to.have.property(\"total\");",
+                  "    pm.expect(response.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_auth_google_callback_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_auth_google_callback_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/logout",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/auth/logout",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_auth_logout_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_auth_logout_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forget Password Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/forget-password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forget-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{TEST_EMAIL}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/auth/forget-password",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_auth_forget-password_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_auth_forget-password_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email Verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/verify-email",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{TEST_EMAIL}}\",\n  \"oneTimeCode\": 123456\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/auth/verify-email",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 201\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// ➕ Create Operation Tests",
+                  "pm.test(\"✓ Resource created with ID\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "    pm.expect(response.data._id).to.be.a(\"string\");",
+                  "    ",
+                  "    // Save auth ID for later use",
+                  "    pm.collectionVariables.set(\"authId\", response.data._id);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Timestamps created\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"createdAt\");",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_auth_verify-email_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_auth_verify-email_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/reset-password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "reset-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"{{NEW_PASSWORD}}\",\n  \"confirmPassword\": \"{{NEW_PASSWORD}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/auth/reset-password",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_auth_reset-password_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_auth_reset-password_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/change-password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "change-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{TEST_PASSWORD}}\",\n  \"newPassword\": \"{{NEW_PASSWORD}}\",\n  \"confirmPassword\": \"{{NEW_PASSWORD}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/auth/change-password",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 201\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// ➕ Create Operation Tests",
+                  "pm.test(\"✓ Resource created with ID\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "    pm.expect(response.data._id).to.be.a(\"string\");",
+                  "    ",
+                  "    // Save auth ID for later use",
+                  "    pm.collectionVariables.set(\"authId\", response.data._id);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Timestamps created\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"createdAt\");",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_auth_change-password_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_auth_change-password_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/resend-verify-email",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "resend-verify-email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{TEST_EMAIL}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/auth/resend-verify-email",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 201\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// ➕ Create Operation Tests",
+                  "pm.test(\"✓ Resource created with ID\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "    pm.expect(response.data._id).to.be.a(\"string\");",
+                  "    ",
+                  "    // Save auth ID for later use",
+                  "    pm.collectionVariables.set(\"authId\", response.data._id);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Timestamps created\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"createdAt\");",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_auth_resend-verify-email_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_auth_resend-verify-email_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/refresh-token",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/auth/refresh-token",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_auth_refresh-token_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_auth_refresh-token_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Auth related endpoints"
+    },
+    {
+      "name": "User Module",
+      "item": [
+        {
+          "name": "Create a new user",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/user/",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 201\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// ➕ Create Operation Tests",
+                  "pm.test(\"✓ Resource created with ID\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "    pm.expect(response.data._id).to.be.a(\"string\");",
+                  "    ",
+                  "    // Save user ID for later use",
+                  "    pm.collectionVariables.set(\"userId\", response.data._id);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Timestamps created\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"createdAt\");",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_user__baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_user__baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get user own profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/profile",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "profile"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/user/profile",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ List retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Pagination metadata exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"pagination\");",
+                  "    pm.expect(response.pagination).to.have.property(\"total\");",
+                  "    pm.expect(response.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_user_profile_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_user_profile_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update user profile",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/profile",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "{{UPDATED_NAME}}",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "{{TEST_EMAIL}}",
+                  "type": "text"
+                },
+                {
+                  "key": "profilePicture",
+                  "value": "",
+                  "type": "file",
+                  "disabled": true,
+                  "description": "Profile picture"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - PATCH /api/v1/user/profile",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔄 Update Operation Tests",
+                  "pm.test(\"✓ Update successful\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ updatedAt timestamp changed\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"PATCH__api_v1_user_profile_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"PATCH__api_v1_user_profile_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get all users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/user/",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ List retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Pagination metadata exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"pagination\");",
+                  "    pm.expect(response.pagination).to.have.property(\"total\");",
+                  "    pm.expect(response.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_user__baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_user__baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Block a user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/:id/block",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ":id",
+                "block"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - PATCH /api/v1/user/:id/block",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔄 Update Operation Tests",
+                  "pm.test(\"✓ Update successful\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ updatedAt timestamp changed\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"PATCH__api_v1_user__id_block_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"PATCH__api_v1_user__id_block_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unblock a user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/:id/unblock",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ":id",
+                "unblock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - PATCH /api/v1/user/:id/unblock",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔄 Update Operation Tests",
+                  "pm.test(\"✓ Update successful\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ updatedAt timestamp changed\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"PATCH__api_v1_user__id_unblock_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"PATCH__api_v1_user__id_unblock_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a specific user by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ":id"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/user/:id",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ Single item retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"object\");",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_user__id_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_user__id_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public user details (allow guest), apply rate limit",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/:id/user",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ":id",
+                "user"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/user/:id/user",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ Single item retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"object\");",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_user__id_user_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_user__id_user_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "User related endpoints"
+    },
+    {
+      "name": "Chat Module",
+      "item": [
+        {
+          "name": "POST - {otherUserId}",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/chats/:otherUserId",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chats",
+                ":otherUserId"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/chats/:otherUserId",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_chats__otherUserId_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_chats__otherUserId_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - Get All",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/chats/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chats"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/chats/",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ List retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Pagination metadata exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"pagination\");",
+                  "    pm.expect(response.pagination).to.have.property(\"total\");",
+                  "    pm.expect(response.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_chats__baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_chats__baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Chat related endpoints"
+    },
+    {
+      "name": "Message Module",
+      "item": [
+        {
+          "name": "POST - Get All",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/messages/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chatId\": \"{{chatId}}\",\n  \"text\": \"Hello, this is a test message!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/messages/",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 201\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// ➕ Create Operation Tests",
+                  "pm.test(\"✓ Resource created with ID\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "    pm.expect(response.data._id).to.be.a(\"string\");",
+                  "    ",
+                  "    // Save message ID for later use",
+                  "    pm.collectionVariables.set(\"messageId\", response.data._id);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Timestamps created\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"createdAt\");",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_messages__baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_messages__baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - {id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/messages/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages",
+                ":id"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/messages/:id",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ Single item retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"object\");",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_messages__id_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_messages__id_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark all messages in a chat as read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/messages/chat/:chatId/read",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages",
+                "chat",
+                ":chatId",
+                "read"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/messages/chat/:chatId/read",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_messages_chat__chatId_read_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_messages_chat__chatId_read_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Message related endpoints"
+    },
+    {
+      "name": "Payment Module",
+      "item": [
+        {
+          "name": "Note: Raw body parsing is handled at app level for webhook routes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/webhook",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "webhook"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/payments/webhook",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 2000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_payments_webhook_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_payments_webhook_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stripe Connect account management",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/stripe/account",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "stripe",
+                "account"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessType\": \"individual\",\n  \"country\": \"US\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/payments/stripe/account",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 2000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_payments_stripe_account_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_payments_stripe_account_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - Stripe - Onboarding",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/stripe/onboarding",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "stripe",
+                "onboarding"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/payments/stripe/onboarding",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_payments_stripe_onboarding_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_payments_stripe_onboarding_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - Stripe - Onboarding Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/stripe/onboarding-status",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "stripe",
+                "onboarding-status"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/payments/stripe/onboarding-status",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_payments_stripe_onboarding-status_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_payments_stripe_onboarding-status_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment history route for poster, tasker, super admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/history",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "history"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/payments/history",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_payments_history_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_payments_history_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retrieve current intent and client_secret by bidId",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/by-bid/:bidId/current-intent",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "by-bid",
+                ":bidId",
+                "current-intent"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/payments/by-bid/:bidId/current-intent",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 2000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_payments_by-bid__bidId_current-intent_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_payments_by-bid__bidId_current-intent_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST - Refund - {paymentId}",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/refund/:paymentId",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "refund",
+                ":paymentId"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Refund requested by customer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/payments/refund/:paymentId",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 2000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_payments_refund__paymentId_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_payments_refund__paymentId_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment information retrieval",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/:paymentId",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                ":paymentId"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/payments/:paymentId",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 2000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_payments__paymentId_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_payments__paymentId_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - Get All",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/payments/",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_payments__baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_payments__baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/stats",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "stats"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/payments/stats",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_payments_stats_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_payments_stats_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE - Account - {accountId}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/account/:accountId",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "account",
+                ":accountId"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - DELETE /api/v1/payments/account/:accountId",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 2000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 💳 Payment Tests",
+                  "pm.test(\"✓ Payment data valid\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"amount\");",
+                  "    pm.expect(response.data.amount).to.be.a(\"number\");",
+                  "    pm.expect(response.data.amount).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Payment status exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"status\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"DELETE__api_v1_payments_account__accountId_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"DELETE__api_v1_payments_account__accountId_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Payment related endpoints"
+    },
+    {
+      "name": "Bookmark Module",
+      "item": [
+        {
+          "name": "Toggle bookmark (add if not exists, remove if exists)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/bookmarks/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookmarks"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetId\": \"{{TARGET_ID}}\",\n  \"targetModel\": \"Task\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - POST /api/v1/bookmarks/",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 201\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// ➕ Create Operation Tests",
+                  "pm.test(\"✓ Resource created with ID\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "    pm.expect(response.data._id).to.be.a(\"string\");",
+                  "    ",
+                  "    // Save bookmark ID for later use",
+                  "    pm.collectionVariables.set(\"bookmarkId\", response.data._id);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Timestamps created\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"createdAt\");",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"POST__api_v1_bookmarks__baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"POST__api_v1_bookmarks__baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get all bookmarks of the current user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/bookmarks/my-bookmarks",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookmarks",
+                "my-bookmarks"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/bookmarks/my-bookmarks",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ List retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Pagination metadata exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"pagination\");",
+                  "    pm.expect(response.pagination).to.have.property(\"total\");",
+                  "    pm.expect(response.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_bookmarks_my-bookmarks_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_bookmarks_my-bookmarks_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Bookmark related endpoints"
+    },
+    {
+      "name": "Notification Module",
+      "item": [
+        {
+          "name": "Fetch notifications + unread count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/notifications/",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ List retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Pagination metadata exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"pagination\");",
+                  "    pm.expect(response.pagination).to.have.property(\"total\");",
+                  "    pm.expect(response.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_notifications__baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_notifications__baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark a notification as read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/:id/read",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                ":id",
+                "read"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - PATCH /api/v1/notifications/:id/read",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔄 Update Operation Tests",
+                  "pm.test(\"✓ Update successful\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ updatedAt timestamp changed\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"PATCH__api_v1_notifications__id_read_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"PATCH__api_v1_notifications__id_read_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark all notifications as read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/read-all",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "read-all"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - PATCH /api/v1/notifications/read-all",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔄 Update Operation Tests",
+                  "pm.test(\"✓ Update successful\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ updatedAt timestamp changed\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"PATCH__api_v1_notifications_read-all_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"PATCH__api_v1_notifications_read-all_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fetch admin notifications + unread count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/admin",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - GET /api/v1/notifications/admin",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 800ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 📖 Read Operation Tests",
+                  "pm.test(\"✓ List retrieved\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Pagination metadata exists\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"pagination\");",
+                  "    pm.expect(response.pagination).to.have.property(\"total\");",
+                  "    pm.expect(response.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"GET__api_v1_notifications_admin_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"GET__api_v1_notifications_admin_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark a single admin notification as read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/admin/:id/read",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                ":id",
+                "read"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - PATCH /api/v1/notifications/admin/:id/read",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔄 Update Operation Tests",
+                  "pm.test(\"✓ Update successful\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ updatedAt timestamp changed\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"PATCH__api_v1_notifications_admin__id_read_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"PATCH__api_v1_notifications_admin__id_read_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark all admin notifications as read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/admin/read-all",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "read-all"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🧪 Auto-generated Tests - PATCH /api/v1/notifications/admin/read-all",
+                  "",
+                  "// ✅ Status Code Validation",
+                  "pm.test(\"✓ Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"✓ Response has success property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"success\");",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// ⏱️ Response Time Validation",
+                  "pm.test(\"✓ Response time under 1000ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// 📋 Schema Validation",
+                  "pm.test(\"✓ Response has data property\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property(\"data\");",
+                  "});",
+                  "",
+                  "// 🔄 Update Operation Tests",
+                  "pm.test(\"✓ Update successful\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ updatedAt timestamp changed\", () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property(\"updatedAt\");",
+                  "});",
+                  "",
+                  "// 🔒 Security Tests",
+                  "pm.test(\"✓ Authorization required\", () => {",
+                  "    const hasAuthHeader = pm.request.headers.has(\"Authorization\");",
+                  "    pm.expect(hasAuthHeader).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"✓ No sensitive data exposed\", () => {",
+                  "    const responseBody = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseBody).to.not.include(\"password\");",
+                  "    pm.expect(responseBody).to.not.include(\"secret\");",
+                  "    pm.expect(responseBody).to.not.include(\"token\");",
+                  "});",
+                  "",
+                  "// 📊 Performance Regression Tests",
+                  "pm.test(\"✓ No performance regression\", () => {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const baselineTime = pm.collectionVariables.get(\"PATCH__api_v1_notifications_admin_read-all_baseline\") || currentTime;",
+                  "    const threshold = baselineTime * 1.3; // 30% tolerance",
+                  "    ",
+                  "    pm.expect(currentTime).to.be.below(threshold, ",
+                  "        `Response time ${currentTime}ms exceeds baseline ${baselineTime}ms by more than 30%`",
+                  "    );",
+                  "    ",
+                  "    // Update baseline (rolling average)",
+                  "    const newBaseline = Math.round((baselineTime + currentTime) / 2);",
+                  "    pm.collectionVariables.set(\"PATCH__api_v1_notifications_admin_read-all_baseline\", newBaseline);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Notification related endpoints"
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chatId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "messageId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientSecret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "TARGET_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "TEST_EMAIL",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "TEST_PASSWORD",
+      "value": "SecurePass123!",
+      "type": "string"
+    },
+    {
+      "key": "TEST_NAME",
+      "value": "John Doe",
+      "type": "string"
+    },
+    {
+      "key": "NEW_PASSWORD",
+      "value": "NewSecure123!",
+      "type": "string"
+    },
+    {
+      "key": "UPDATED_NAME",
+      "value": "Updated Name",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-inject Bearer token if available",
+          "const token = pm.collectionVariables.get(\"accessToken\");",
+          "",
+          "if (token) {",
+          "  pm.request.headers.add({",
+          "    key: \"Authorization\",",
+          "    value: \"Bearer \" + token",
+          "  });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Generic response validation",
+          "pm.test(\"Status code is 2xx\", function () {",
+          "  pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+          "});",
+          "",
+          "pm.test(\"Response has success field\", function () {",
+          "  const response = pm.response.json();",
+          "  pm.expect(response).to.have.property(\"success\");",
+          "});"
+        ]
+      }
+    }
+  ]
+}

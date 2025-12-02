@@ -1,6 +1,7 @@
 import { FilterQuery, Query } from 'mongoose';
 import { recordDbQuery } from '../logging/requestContext';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import escapeRegex from 'escape-string-regexp';
 
 class QueryBuilder<T> {
   public modelQuery: Query<T[], T>;
@@ -14,12 +15,15 @@ class QueryBuilder<T> {
   // 🔍 Searching across multiple fields
   search(searchableFields: string[]) {
     if (this?.query?.searchTerm) {
+      // Sanitize search term to prevent NoSQL injection via regex
+      const sanitizedTerm = escapeRegex(String(this.query.searchTerm));
+
       this.modelQuery = this.modelQuery.find({
         $or: searchableFields.map(
           field =>
             ({
               [field]: {
-                $regex: this.query.searchTerm,
+                $regex: sanitizedTerm,
                 $options: 'i',
               },
             } as FilterQuery<T>)
@@ -405,12 +409,15 @@ class QueryBuilder<T> {
     additionalMatch: Record<string, unknown> = {}
   ) {
     if (searchTerm) {
+      // Sanitize search term to prevent NoSQL injection via regex
+      const sanitizedTerm = escapeRegex(searchTerm);
+
       const searchConditions = {
         $and: [
           {
             $or: searchableFields.map(field => ({
               [field]: {
-                $regex: searchTerm,
+                $regex: sanitizedTerm,
                 $options: 'i',
               },
             })),

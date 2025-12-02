@@ -1,0 +1,64 @@
+sequenceDiagram
+    autonumber
+    participant C as 📱 Client
+    participant S as 🔌 Socket.IO
+    participant DB as 🗄️ MongoDB
+    participant P as 👤 Presence
+    participant R as 📢 Chat Room
+
+    Note over C,R: 🚪 Room Management Flow
+
+    rect rgb(240, 255, 240)
+        Note over C,R: JOIN_CHAT Event
+
+        C->>S: emit('JOIN_CHAT', {chatId})
+
+        S->>DB: Chat.exists({_id: chatId, participants: userId})
+
+        alt Not Participant
+            DB-->>S: false
+            S-->>C: emit('ACK_ERROR', {message: 'Not a participant', chatId})
+        else Is Participant
+            DB-->>S: true
+
+            Note over S: Join socket room
+            S->>S: socket.join('chat::' + chatId)
+
+            S->>P: addUserRoom(userId, chatId)
+            S->>P: getLastActive(userId)
+            P-->>S: lastActive timestamp
+
+            Note over S,R: Broadcast user online
+            S->>R: io.to('chat::' + chatId).emit('USER_ONLINE')
+            R-->>R: {userId, chatId, lastActive}
+
+            Note over S,DB: Auto-mark undelivered as delivered
+            S->>DB: Message.find({chatId, deliveredTo: {$nin: [userId]}})
+            DB-->>S: undelivered messages[]
+
+            loop For each undelivered message
+                S->>DB: Message.updateMany({$addToSet: {deliveredTo: userId}})
+                S->>R: emit('MESSAGE_DELIVERED', {messageId, chatId, userId})
+            end
+        end
+    end
+
+    rect rgb(255, 240, 240)
+        Note over C,R: LEAVE_CHAT Event
+
+        C->>S: emit('LEAVE_CHAT', {chatId})
+
+        S->>DB: Chat.exists({_id: chatId, participants: userId})
+
+        alt Is Participant
+            DB-->>S: true
+
+            S->>S: socket.leave('chat::' + chatId)
+            S->>P: removeUserRoom(userId, chatId)
+            S->>P: getLastActive(userId)
+            P-->>S: lastActive timestamp
+
+            S->>R: io.to('chat::' + chatId).emit('USER_OFFLINE')
+            R-->>R: {userId, chatId, lastActive}
+        end
+    end

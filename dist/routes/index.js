@@ -11,6 +11,7 @@ const message_route_1 = require("../app/modules/message/message.route");
 const payment_routes_1 = require("../app/modules/payment/payment.routes");
 const bookmark_route_1 = require("../app/modules/bookmark/bookmark.route");
 const notification_routes_1 = require("../app/modules/notification/notification.routes");
+const scrape_route_1 = require("../app/modules/scrape/scrape.route");
 const router = express_1.default.Router();
 const apiRoutes = [
     {
@@ -40,6 +41,10 @@ const apiRoutes = [
     {
         path: '/notifications',
         route: notification_routes_1.NotificationRoutes,
+    },
+    {
+        path: '/scrape',
+        route: scrape_route_1.ScrapeRoutes,
     },
 ];
 apiRoutes.forEach(route => router.use(route.path, route.route));

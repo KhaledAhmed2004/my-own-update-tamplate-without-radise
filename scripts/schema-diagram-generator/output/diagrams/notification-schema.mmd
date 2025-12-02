@@ -1,0 +1,14 @@
+erDiagram
+
+    NOTIFICATION {
+        ObjectId _id PK
+        String title
+        String text "required"
+        ObjectId receiver FK "required, ref: User"
+        Boolean isRead
+        String type "enum: ADMIN, BID, BOOKING..."
+        ObjectId referenceId
+    }
+
+    %% Relationships
+    %% NOTIFICATION -> USER (receiver) - target not found

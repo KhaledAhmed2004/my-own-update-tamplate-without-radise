@@ -1,0 +1,24 @@
+erDiagram
+
+    PAYMENT {
+        ObjectId _id PK
+        ObjectId taskId FK "required, ref: Task"
+        ObjectId posterId FK "required, ref: User"
+        ObjectId freelancerId FK "required, ref: User"
+        ObjectId bidId FK "ref: Bid"
+        Number amount "required"
+        Number platformFee "required"
+        Number freelancerAmount "required"
+        String stripePaymentIntentId "required"
+        String stripeTransferId
+        String status "required"
+        String currency "required"
+        Schema metadata
+        String refundReason
+    }
+
+    %% Relationships
+    %% PAYMENT -> TASK (taskId) - target not found
+    %% PAYMENT -> USER (posterId) - target not found
+    %% PAYMENT -> USER (freelancerId) - target not found
+    %% PAYMENT -> BID (bidId) - target not found

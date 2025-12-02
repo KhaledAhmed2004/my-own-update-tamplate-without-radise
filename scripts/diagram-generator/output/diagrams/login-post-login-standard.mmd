@@ -1,0 +1,13 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Validation
+
+    Client->>+Route: POST /login
+    Route->>+Validation: Validate
+    Note over Validation: ✓ Validation&#58; সমস্ত data সঠিক কিনা যাচাই করা হচ্ছে
+    Note over Validation: Schema&#58; AuthValidation.createLoginZodSchema
+    Validation->>-Route: Valid ✓
+    Controller->>-Route: Response
+    Route-->>Client: Success

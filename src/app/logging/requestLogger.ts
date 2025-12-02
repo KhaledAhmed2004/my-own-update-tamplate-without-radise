@@ -2,10 +2,35 @@ import type { NextFunction, Request, Response } from 'express';
 import colors from 'colors';
 import { randomUUID } from 'crypto';
 import { logger, errorLogger } from '../../shared/logger';
-import { getLabels, controllerNameFromBasePath, getMetrics } from './requestContext';
+import {
+  getLabels,
+  controllerNameFromBasePath,
+  getMetrics,
+  recordMemoryStart,
+  recordMemoryEnd,
+  recordCPUStart,
+  recordCPUEnd,
+} from './requestContext';
 import config from '../../config';
 import { trace, context } from '@opentelemetry/api';
 import { getTimelineTotal } from './opentelemetry';
+import {
+  captureMemorySnapshot,
+  captureCPUUsage,
+  calculateMemoryGrowth,
+  calculateCPUTime,
+  calculateCPUOverhead,
+  getMemoryHealth,
+  getCPUHealth,
+  getEventLoopHealth,
+  formatProgressBar,
+  formatBytes,
+  getHealthColor,
+  getHealthEmoji,
+  getHealthDescription,
+  getOverallHealth,
+  calculateEventLoopMetrics,
+} from './performanceMetrics';
 
 // 🗓️ Format date
 const formatDate = (): string => {
@@ -99,6 +124,171 @@ const indentBlock = (text: string, spaces = 5): string => {
     .split('\n')
     .map(line => pad + line)
     .join('\n');
+};
+
+// 🎨 Format MongoDB execution stage to human-readable format
+const formatExecutionStage = (stage?: string): string => {
+  if (!stage) return colors.dim('Unknown');
+
+  const stageUpper = String(stage).toUpperCase();
+
+  // Fast operations (bright green indicator)
+  if (stageUpper.includes('IXSCAN')) {
+    return `${colors.green.bold('🟢')} ${colors.green.bold('IXSCAN')} ${colors.yellow('(Index Scan - Fast)')}`;
+  }
+  if (stageUpper.includes('COUNT_SCAN')) {
+    return `${colors.green.bold('🟢')} ${colors.green.bold('COUNT_SCAN')} ${colors.yellow('(Count via Index)')}`;
+  }
+  if (stageUpper.includes('TEXT')) {
+    return `${colors.green.bold('🟢')} ${colors.green.bold('TEXT')} ${colors.yellow('(Text Index Search)')}`;
+  }
+  if (stageUpper.includes('GEO') || stageUpper.includes('2DSPHERE')) {
+    return `${colors.green.bold('🟢')} ${colors.green.bold('GEO_NEAR')} ${colors.yellow('(Geo Index Scan)')}`;
+  }
+
+  // Moderate operations (bright yellow indicator)
+  if (stageUpper.includes('FETCH')) {
+    return `${colors.yellow.bold('🟡')} ${colors.yellow.bold('FETCH')} ${colors.yellow('(Index + Document Fetch)')}`;
+  }
+
+  // Slow operations (bright red indicator - needs attention!)
+  if (stageUpper.includes('COLLSCAN')) {
+    return `${colors.red.bold('🔴')} ${colors.red.bold('COLLSCAN')} ${colors.yellow('(Full Collection Scan - Slow!)')}`;
+  }
+
+  // Default - unknown stage
+  return `${colors.cyan.bold('ℹ️')} ${colors.cyan.bold(stage)}`;
+};
+
+// 🗄️ Render a single query in multi-line format
+const renderQueryMultiLine = (q: any, index: number): string[] => {
+  const lines: string[] = [];
+
+  // Determine performance level for emoji
+  const isSlow = (q?.durationMs || 0) >= 1000;
+  const isModerate = (q?.durationMs || 0) >= 300 && (q?.durationMs || 0) < 1000;
+  const isFast = (q?.durationMs || 0) < 300;
+
+  const perfEmoji = isSlow ? '🐌' : isModerate ? '⚠️' : '⚡';
+  const durColor = isSlow ? colors.red.bold : isModerate ? colors.yellow.bold : colors.green.bold;
+
+  // Header: 1️⃣ User.findOne • 51ms ⚡
+  const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+  const numberEmoji = index < numberEmojis.length ? numberEmojis[index] : `${index + 1}️⃣`;
+  const model = colors.cyan.bold(q?.model || 'Unknown');
+  const operation = colors.white(q?.operation || 'query');
+  const duration = durColor(`${q?.durationMs || 0}ms`);
+
+  lines.push(`   ${numberEmoji} ${model}.${operation} • ${duration} ${perfEmoji}`);
+
+  // Line 1: Scanned & Returned & Efficiency
+  const scanned = colors.white.bold(String(q?.docsExamined || '?'));
+  const returned = colors.white.bold(String(q?.nReturned !== undefined ? q.nReturned : '?'));
+
+  // Calculate efficiency
+  let efficiencyDisplay = colors.dim('n/a');
+  if (q?.docsExamined && q?.nReturned !== undefined) {
+    const pct = (q.nReturned / q.docsExamined) * 100;
+    const pctStr = pct < 1 ? pct.toFixed(3) : pct.toFixed(2);
+
+    if (pct >= 50) {
+      efficiencyDisplay = `${colors.green.bold(pctStr + '%')} ${colors.green.bold('🟢')}`;
+    } else if (pct >= 10) {
+      efficiencyDisplay = `${colors.yellow.bold(pctStr + '%')} ${colors.yellow.bold('🟡')}`;
+    } else {
+      efficiencyDisplay = `${colors.red.bold(pctStr + '%')} ${colors.red.bold('🔴')}`;
+    }
+  }
+
+  lines.push(`      ├─ ${colors.cyan('Scanned:')} ${scanned} • ${colors.cyan('Returned:')} ${returned} • ${colors.cyan('Efficiency:')} ${efficiencyDisplay}`);
+
+  // Line 2: Index
+  const indexUsed = q?.indexUsed;
+  let indexDisplay;
+  if (!indexUsed || indexUsed === 'NO_INDEX') {
+    indexDisplay = `${colors.red.bold('❌')} ${colors.red.bold('NO_INDEX')}`;
+  } else {
+    indexDisplay = `${colors.green.bold('✅')} ${colors.green.bold(indexUsed)}`;
+  }
+
+  lines.push(`      ├─ ${colors.cyan('Index:')} ${indexDisplay}`);
+
+  // Line 3: Execution Stage
+  const executionStage = formatExecutionStage(q?.executionStage);
+  lines.push(`      ├─ ${colors.cyan('Execution:')} ${executionStage}`);
+
+  // Line 4: Cache
+  const cacheHit = q?.cacheHit;
+  const cacheDisplay = cacheHit
+    ? `${colors.green.bold('✅')} ${colors.green.bold('Yes')}`
+    : `${colors.dim('❌')} ${colors.dim('No')}`;
+
+  lines.push(`      ├─ ${colors.cyan('Cache:')} ${cacheDisplay}`);
+
+  // Line 5 (conditional): Pipeline (only for aggregate operations)
+  const operationName = String(q?.operation || '').toLowerCase();
+  const isAgg = operationName === 'aggregate';
+  if (isAgg && q?.pipeline) {
+    const pipelineStr = colors.magenta.bold(q.pipeline);
+    lines.push(`      ├─ ${colors.cyan('Pipeline:')} ${pipelineStr}`);
+  }
+
+  // 🆕 NEW: Enhanced query details (filter, sort, projection, limit, skip, caller)
+  // Filter
+  if (q?.filter) {
+    try {
+      const filterObj = JSON.parse(q.filter);
+      const filterDisplay = colors.yellow(JSON.stringify(filterObj));
+      lines.push(`      ├─ ${colors.cyan('Filter:')} ${filterDisplay}`);
+    } catch {
+      lines.push(`      ├─ ${colors.cyan('Filter:')} ${colors.yellow(q.filter)}`);
+    }
+  }
+
+  // Sort
+  if (q?.sort) {
+    try {
+      const sortObj = JSON.parse(q.sort);
+      const sortDisplay = colors.yellow(JSON.stringify(sortObj));
+      lines.push(`      ├─ ${colors.cyan('Sort:')} ${sortDisplay}`);
+    } catch {
+      lines.push(`      ├─ ${colors.cyan('Sort:')} ${colors.yellow(q.sort)}`);
+    }
+  }
+
+  // Projection
+  if (q?.projection) {
+    try {
+      const projObj = JSON.parse(q.projection);
+      const projDisplay = colors.yellow(JSON.stringify(projObj));
+      lines.push(`      ├─ ${colors.cyan('Projection:')} ${projDisplay}`);
+    } catch {
+      lines.push(`      ├─ ${colors.cyan('Projection:')} ${colors.yellow(q.projection)}`);
+    }
+  }
+
+  // Limit & Skip
+  if (q?.limit !== undefined || q?.skip !== undefined) {
+    const limitDisplay = q?.limit !== undefined ? colors.white.bold(String(q.limit)) : colors.dim('none');
+    const skipDisplay = q?.skip !== undefined ? colors.white.bold(String(q.skip)) : colors.dim('0');
+    lines.push(`      ├─ ${colors.cyan('Limit:')} ${limitDisplay} • ${colors.cyan('Skip:')} ${skipDisplay}`);
+  }
+
+  // Caller Location
+  if (q?.callerLocation) {
+    const locationDisplay = colors.green.bold(q.callerLocation);
+    lines.push(`      ├─ ${colors.cyan('Called from:')} ${locationDisplay}`);
+  }
+
+  // Last line: Suggestion
+  const suggestion = q?.suggestion;
+  const suggestionDisplay = suggestion && suggestion !== 'n/a'
+    ? `${colors.magenta.bold('💡')} ${colors.magenta.bold(suggestion)}`
+    : colors.dim('n/a');
+
+  lines.push(`      └─ ${colors.cyan('Suggestion:')} ${suggestionDisplay}`);
+
+  return lines;
 };
 
 // 📏 File size converter
@@ -250,6 +440,20 @@ export const requestLogger = (
   res.setHeader('X-Request-Id', requestId);
   (res.locals as any).requestId = requestId;
 
+  // 🆕 NEW: Capture performance baseline (memory, CPU)
+  try {
+    if (config.tracing?.performance?.enabled) {
+      if (config.tracing.performance.captureMemory) {
+        recordMemoryStart(captureMemorySnapshot());
+      }
+      if (config.tracing.performance.captureCPU) {
+        recordCPUStart(captureCPUUsage());
+      }
+    }
+  } catch {
+    // Silent failure - won't affect request
+  }
+
   res.on('finish', () => {
     const ms = Date.now() - start;
     let processedMs = ms;
@@ -291,7 +495,7 @@ export const requestLogger = (
     })();
 
     const routeColor = colors.cyan.bold(req.originalUrl);
-    const ipColor = colors.gray.bold(` ${getClientIp(req)} `);
+    const ipColor = colors.blue.bold(` ${getClientIp(req)} `);
 
     // 🎨 Status color
     const statusColor = (() => {
@@ -345,9 +549,9 @@ export const requestLogger = (
     }
 
     const lines: string[] = [];
-    lines.push(colors.gray.bold(`[${formatDate()}]  🧩 Req-ID: ${requestId}`));
+    lines.push(colors.blue.bold(`[${formatDate()}]  🧩 Req-ID: ${requestId}`));
     lines.push(`📥 Request: ${methodColor} ${routeColor} from IP:${ipColor}`);
-    lines.push(colors.gray(`     🛰️ Client: ua="${ua}" referer="${referer || 'n/a'}" ct="${contentType || 'n/a'}"`));
+    lines.push(colors.blue(`     🛰️ Client: ua="${ua}" referer="${referer || 'n/a'}" ct="${contentType || 'n/a'}"`));
     // Enriched device/OS/browser info (if available)
     const info: any = (res.locals as any)?.clientInfo;
     if (info) {
@@ -357,15 +561,15 @@ export const requestLogger = (
       const arch = info.arch ? `, Arch: ${info.arch}` : '';
       const bits = info.bitness ? `, ${info.bitness}-bit` : '';
       const br = info.browser ? `, Browser: ${info.browser}${info.browserVersion ? ' ' + info.browserVersion : ''}` : '';
-      lines.push(colors.gray(`     💻 Device: ${info.deviceType}, OS: ${osLabel}${osRaw}${model}${arch}${bits}${br}`));
+      lines.push(colors.blue(`     💻 Device: ${info.deviceType}, OS: ${osLabel}${osRaw}${model}${arch}${bits}${br}`));
     }
     if (controllerLabel || serviceLabel) {
       const parts: string[] = [];
       if (controllerLabel) parts.push(`controller: ${controllerLabel}`);
       if (serviceLabel) parts.push(`service: ${serviceLabel}`);
-      lines.push(colors.gray(`     🎛️ Handler: ${parts.join(' ')}`));
+      lines.push(colors.blue(`     🎛️ Handler: ${parts.join(' ')}`));
     } else if (handlerLabel) {
-      lines.push(colors.gray(`     🎛️ Handler: ${handlerLabel}`));
+      lines.push(colors.blue(`     🎛️ Handler: ${handlerLabel}`));
     }
     if (authCtx) {
       lines.push(colors.gray(`     👤 Auth: id="${authCtx.id || 'n/a'}" email="${authCtx.email || 'n/a'}" role="${authCtx.role || 'n/a'}"`));
@@ -374,7 +578,7 @@ export const requestLogger = (
     // 🔔 Stripe webhook request context (global)
     if (isStripeWebhook(req)) {
       lines.push(colors.yellow('     🔔 Stripe webhook request context:'));
-      lines.push(colors.gray(indentBlock(JSON.stringify(getWebhookLogContext(req), null, 2))));
+      lines.push(colors.white(indentBlock(JSON.stringify(getWebhookLogContext(req), null, 2))));
 
       // ✅ Signature verification status from controller
       const sigVerified = (res.locals as any)?.webhookSignatureVerified;
@@ -394,18 +598,18 @@ export const requestLogger = (
       const evt = parseStripeEventSafe(req);
       if (evt && evt.object === 'event' && evt.type) {
         lines.push(colors.yellow('     📨 Received webhook event:'));
-        lines.push(colors.gray(indentBlock(JSON.stringify(getEventSummary(evt), null, 2))));
+        lines.push(colors.white(indentBlock(JSON.stringify(getEventSummary(evt), null, 2))));
 
         const type = evt.type as string;
         if (type === 'payment_intent.amount_capturable_updated') {
           lines.push(colors.yellow('     💳 Amount capturable updated:'));
-          lines.push(colors.gray(indentBlock(JSON.stringify(getPaymentIntentLogDetails(evt), null, 2))));
+          lines.push(colors.white(indentBlock(JSON.stringify(getPaymentIntentLogDetails(evt), null, 2))));
         } else if (type === 'payment_intent.succeeded') {
           lines.push(colors.yellow('     💰 Processing payment succeeded:'));
-          lines.push(colors.gray(indentBlock(JSON.stringify(getPaymentIntentLogDetails(evt), null, 2))));
+          lines.push(colors.white(indentBlock(JSON.stringify(getPaymentIntentLogDetails(evt), null, 2))));
         } else if (type === 'payment_intent.payment_failed') {
           lines.push(colors.yellow('     ❌ Payment failed details:'));
-          lines.push(colors.gray(indentBlock(JSON.stringify(getPaymentIntentLogDetails(evt), null, 2))));
+          lines.push(colors.white(indentBlock(JSON.stringify(getPaymentIntentLogDetails(evt), null, 2))));
         }
       }
     }
@@ -413,14 +617,14 @@ export const requestLogger = (
     if (config.node_env === 'development') {
       lines.push(colors.yellow('     🔎 Request details:'));
       lines.push(
-        colors.gray(indentBlock(JSON.stringify(maskedDetails, null, 2)))
+        colors.white(indentBlock(JSON.stringify(maskedDetails, null, 2)))
       );
     }
 
     const respLabel = status >= 400 ? '❌ Response sent:' : '📤 Response sent:';
     const respSizeHeader = res.getHeader('Content-Length');
     const respSize = typeof respSizeHeader === 'string' ? respSizeHeader : Array.isArray(respSizeHeader) ? respSizeHeader[0] : (respSizeHeader as any);
-    lines.push(`${respLabel} ${statusColor(` ${status} ${statusMsg} `)} ${colors.gray(respSize ? `(size: ${respSize} bytes)` : '')}`);
+    lines.push(`${respLabel} ${statusColor(` ${status} ${statusMsg} `)} ${colors.blue(respSize ? `(size: ${respSize} bytes)` : '')}`);
 
     // 💬 Message with bg only on message text
     if (responseMessage) {
@@ -434,8 +638,22 @@ export const requestLogger = (
     ) {
       lines.push(colors.red('📌 Details:'));
       lines.push(
-        colors.gray(indentBlock(JSON.stringify(responseErrors, null, 2)))
+        colors.white(indentBlock(JSON.stringify(responseErrors, null, 2)))
       );
+    }
+
+    // 🆕 NEW: Capture performance end state (memory, CPU)
+    try {
+      if (config.tracing?.performance?.enabled) {
+        if (config.tracing.performance.captureMemory) {
+          recordMemoryEnd(captureMemorySnapshot());
+        }
+        if (config.tracing.performance.captureCPU) {
+          recordCPUEnd(captureCPUUsage());
+        }
+      }
+    } catch {
+      // Silent failure
     }
 
     // 📊 Metrics block (DB, Cache, External) with detailed DB categories
@@ -452,9 +670,9 @@ export const requestLogger = (
         // Build detailed DB metrics output
         lines.push(' ----------------------------------------------------');
         lines.push(colors.bold(' 🧮 DB Metrics'));
-        lines.push(colors.gray(`    • Hits            : ${dbHits}${dbHits > 0 ? ' ✅' : ''}`));
-        lines.push(colors.gray(`    • Avg Query Time  : ${dbAvg}ms ⏱️`));
-        lines.push(colors.gray(`    • Slowest Query   : ${dbSlow}ms ${dbSlow >= 1000 ? '🐌' : dbSlow >= 300 ? '⏱️' : '⚡'}`));
+        lines.push(colors.magenta(`    • Hits            : ${dbHits}${dbHits > 0 ? ' ✅' : ''}`));
+        lines.push(colors.magenta(`    • Avg Query Time  : ${dbAvg}ms ⏱️`));
+        lines.push(colors.magenta(`    • Slowest Query   : ${dbSlow}ms ${dbSlow >= 1000 ? '🐌' : dbSlow >= 300 ? '⏱️' : '⚡'}`));
 
         const queries = (m.db as any).queries || [];
         const byCat = {
@@ -513,31 +731,51 @@ export const requestLogger = (
           );
         };
 
-        lines.push(colors.bold(' Fast Queries ⚡ (< 300ms):'));
+        lines.push(colors.green.bold(`⚡ FAST QUERIES (< 300ms) — ${byCat.fast.length} found`));
+        lines.push('');
         if (!byCat.fast.length) {
-          lines.push(colors.gray(' - None'));
+          lines.push(colors.dim('   └─ None'));
         } else {
-          byCat.fast.forEach((q: any) => {
-            lines.push(renderQueryLine(q));
+          byCat.fast.forEach((q: any, index: number) => {
+            const queryLines = renderQueryMultiLine(q, index);
+            lines.push(...queryLines);
+
+            // Add blank line between queries (except after last one)
+            if (index < byCat.fast.length - 1) {
+              lines.push('');
+            }
           });
         }
 
-        lines.push(colors.bold(' Moderate Queries ⏱️ (300–999ms):'));
+        lines.push('');
+        lines.push(colors.yellow.bold(`⏱️  MODERATE QUERIES (300-999ms) — ${byCat.moderate.length} found`));
         if (!byCat.moderate.length) {
-          lines.push(colors.gray(' - None'));
+          lines.push(colors.dim('   └─ None'));
         } else {
-          byCat.moderate.forEach((q: any) => {
-            lines.push(renderQueryLine(q));
+          lines.push('');
+          byCat.moderate.forEach((q: any, index: number) => {
+            const queryLines = renderQueryMultiLine(q, index);
+            lines.push(...queryLines);
+
+            if (index < byCat.moderate.length - 1) {
+              lines.push('');
+            }
           });
         }
 
-        lines.push(colors.bold(' Slow Queries 🐌 (>= 1000ms):'));
+        lines.push('');
+        lines.push(colors.red.bold(`🐌 SLOW QUERIES (≥ 1000ms) — ${byCat.slow.length} found`));
         if (!byCat.slow.length) {
-          lines.push(colors.gray(' - None'));
+          lines.push(colors.dim('   └─ None ✨'));
         } else {
-          byCat.slow.forEach((q: any) => {
-            // For slow queries, pipeline and suggestion will be clearly visible via renderQueryLine
-            lines.push(renderQueryLine(q));
+          lines.push('');
+          byCat.slow.forEach((q: any, index: number) => {
+            const queryLines = renderQueryMultiLine(q, index);
+            lines.push(...queryLines);
+
+            if (index < byCat.slow.length - 1) {
+              lines.push('');
+            }
           });
         }
 
@@ -556,14 +794,14 @@ export const requestLogger = (
         else if (dbHits >= 4 || extCount >= 1) cost = 'MEDIUM';
 
         lines.push(colors.bold(' 🗄️ Cache Metrics'));
-        lines.push(colors.gray(`    • Hits            : ${cacheHits}`));
-        lines.push(colors.gray(`    • Misses          : ${cacheMisses}`));
-        lines.push(colors.gray(`    • Hit Ratio       : ${cacheHitRatio}%`));
+        lines.push(colors.magenta(`    • Hits            : ${cacheHits}`));
+        lines.push(colors.magenta(`    • Misses          : ${cacheMisses}`));
+        lines.push(colors.magenta(`    • Hit Ratio       : ${cacheHitRatio}%`));
 
         lines.push(colors.bold(' 🌐 External API Calls'));
-        lines.push(colors.gray(`    • Count           : ${extCount}`));
-        lines.push(colors.gray(`    • Avg Response    : ${extAvg}ms`));
-        lines.push(colors.gray(`    • Slowest Call    : ${extSlow}ms`));
+        lines.push(colors.magenta(`    • Count           : ${extCount}`));
+        lines.push(colors.magenta(`    • Avg Response    : ${extAvg}ms`));
+        lines.push(colors.magenta(`    • Slowest Call    : ${extSlow}ms`));
 
         const costColor = cost === 'HIGH' ? colors.bgRed.white.bold : cost === 'MEDIUM' ? colors.bgYellow.black.bold : colors.bgGreen.black.bold;
         lines.push(' ----------------------------------------------------');
@@ -571,10 +809,158 @@ export const requestLogger = (
       }
     } catch {}
 
+    // 🆕 NEW: Performance Metrics Display
+    try {
+      const m = getMetrics();
+      if (
+        config.tracing?.performance?.enabled &&
+        m?.performance &&
+        (m.performance.memoryStart || m.performance.cpuStart)
+      ) {
+        const perf = m.performance;
+        const thresholds = config.tracing.performance.thresholds;
+
+        lines.push('');
+        lines.push(colors.cyan.bold(' 📊 PERFORMANCE METRICS'));
+        lines.push(' ----------------------------------------------------');
+
+        // Memory Section
+        if (perf.memoryStart && perf.memoryEnd) {
+          const growthMB = calculateMemoryGrowth(perf.memoryStart, perf.memoryEnd);
+          const memHealth = getMemoryHealth(growthMB, thresholds.memory);
+          const memColor = getHealthColor(memHealth);
+          const memEmoji = getHealthEmoji(memHealth);
+          const memBar = formatProgressBar(Math.abs(growthMB), 100, 10);
+
+          lines.push(colors.bold(' 💾 Memory'));
+          lines.push(colors.magenta(`    • Heap Start      : ${formatBytes(perf.memoryStart.heapUsed)}`));
+          lines.push(colors.magenta(`    • Heap End        : ${formatBytes(perf.memoryEnd.heapUsed)}`));
+
+          // Context note for high memory growth
+          let memoryNote = '';
+          if (growthMB > 50) {
+            const hasFiles = req.files && Object.keys(req.files).length > 0;
+            const isCryptoOperation =
+              req.originalUrl?.includes('/auth/') ||
+              req.originalUrl?.includes('/login') ||
+              req.originalUrl?.includes('/register') ||
+              req.originalUrl?.includes('/reset-password');
+
+            if (hasFiles) {
+              memoryNote = colors.gray(' (file upload allocates buffers - normal)');
+            } else if (isCryptoOperation) {
+              memoryNote = colors.gray(' (bcrypt allocates ~30-40MB - normal for auth)');
+            } else {
+              memoryNote = colors.gray(' (consider if sustained across multiple requests)');
+            }
+          }
+
+          lines.push(
+            memColor(
+              `    • Growth          : ${memBar} ${growthMB >= 0 ? '+' : ''}${growthMB} MB [${memHealth}] ${memEmoji}${memoryNote}`
+            )
+          );
+          lines.push(colors.magenta(`    • RSS             : ${formatBytes(perf.memoryEnd.rss)}`));
+          lines.push(
+            memColor(`    • Status          : ${memHealth} - ${getHealthDescription(memHealth, 'memory')} ${memEmoji}`)
+          );
+        }
+
+        // CPU Section
+        if (perf.cpuStart && perf.cpuEnd) {
+          const cpuTime = calculateCPUTime(perf.cpuStart, perf.cpuEnd);
+          const cpuOverhead = calculateCPUOverhead(cpuTime.totalMs, processedMs);
+          const cpuHealth = getCPUHealth(cpuOverhead, thresholds.cpu);
+          const cpuColor = getHealthColor(cpuHealth);
+          const cpuEmoji = getHealthEmoji(cpuHealth);
+          const cpuBar = formatProgressBar(cpuOverhead, 100, 10);
+
+          lines.push(colors.bold(' ⚡ CPU'));
+          lines.push(colors.magenta(`    • User Time       : ${cpuTime.userMs}ms`));
+          lines.push(colors.magenta(`    • System Time     : ${cpuTime.systemMs}ms`));
+          lines.push(colors.magenta(`    • Total           : ${cpuTime.totalMs}ms`));
+
+          // Context note for high CPU overhead (>100%)
+          let cpuOverheadNote = '';
+          if (cpuOverhead > 100) {
+            const isCryptoOperation =
+              req.originalUrl?.includes('/auth/') ||
+              req.originalUrl?.includes('/login') ||
+              req.originalUrl?.includes('/register') ||
+              req.originalUrl?.includes('/reset-password');
+
+            const isFileOperation =
+              req.originalUrl?.includes('/upload') ||
+              Boolean(req.files && Object.keys(req.files).length > 0);
+
+            if (isCryptoOperation) {
+              cpuOverheadNote = colors.gray(' (bcrypt/JWT uses thread pool - normal)');
+            } else if (isFileOperation) {
+              cpuOverheadNote = colors.gray(' (file processing on thread pool - normal)');
+            } else {
+              cpuOverheadNote = colors.gray(' (multi-core async operation)');
+            }
+          }
+
+          lines.push(
+            cpuColor(
+              `    • Overhead        : ${cpuBar} ${cpuOverhead.toFixed(1)}% of request [${cpuHealth}] ${cpuEmoji}${cpuOverheadNote}`
+            )
+          );
+          lines.push(
+            cpuColor(`    • Status          : ${cpuHealth} - ${getHealthDescription(cpuHealth, 'cpu')} ${cpuEmoji}`)
+          );
+        }
+
+        // Event Loop Section
+        if (perf.eventLoopSamples && perf.eventLoopSamples.length > 0) {
+          const loopMetrics = calculateEventLoopMetrics(perf.eventLoopSamples);
+          const loopHealth = getEventLoopHealth(loopMetrics.avgLag, thresholds.eventLoop);
+          const loopColor = getHealthColor(loopHealth);
+          const loopEmoji = getHealthEmoji(loopHealth);
+          const loopBar = formatProgressBar(loopMetrics.avgLag, 50, 10);
+
+          lines.push(colors.bold(' 🔄 Event Loop'));
+          lines.push(
+            loopColor(`    • Avg Lag         : ${loopBar} ${loopMetrics.avgLag.toFixed(1)}ms [${loopHealth}] ${loopEmoji}`)
+          );
+          lines.push(colors.magenta(`    • Peak Lag        : ${loopMetrics.peakLag.toFixed(1)}ms`));
+          lines.push(colors.magenta(`    • Samples         : ${loopMetrics.sampleCount}`));
+          lines.push(
+            loopColor(
+              `    • Status          : ${loopHealth} - ${getHealthDescription(loopHealth, 'eventLoop')} ${loopEmoji}`
+            )
+          );
+        }
+
+        // Overall Health Summary
+        if (perf.memoryStart && perf.memoryEnd && perf.cpuStart && perf.cpuEnd) {
+          const growthMB = calculateMemoryGrowth(perf.memoryStart, perf.memoryEnd);
+          const cpuTime = calculateCPUTime(perf.cpuStart, perf.cpuEnd);
+          const cpuOverhead = calculateCPUOverhead(cpuTime.totalMs, processedMs);
+          const loopMetrics = perf.eventLoopSamples?.length
+            ? calculateEventLoopMetrics(perf.eventLoopSamples)
+            : { avgLag: 0 } as any;
+
+          const memHealth = getMemoryHealth(growthMB, thresholds.memory);
+          const cpuHealth = getCPUHealth(cpuOverhead, thresholds.cpu);
+          const loopHealth = getEventLoopHealth(loopMetrics.avgLag, thresholds.eventLoop);
+
+          const overall = getOverallHealth(memHealth, cpuHealth, loopHealth);
+          const overallColor = overall.emoji === '✅' ? colors.green.bold : overall.emoji === '⚠️' ? colors.yellow.bold : overall.emoji === '🟠' ? colors.magenta.bold : colors.red.bold;
+
+          lines.push(' ----------------------------------------------------');
+          lines.push(
+            overallColor(` 🧠 Overall Health: ${overall.status} - ${overall.message} ${overall.emoji}`)
+          );
+        }
+      }
+    } catch {}
+
     // ⏱️ Duration with thresholds and category label
     const durColor = processedMs >= 1000 ? colors.bgRed.white.bold : processedMs >= 300 ? colors.bgYellow.black.bold : colors.bgGreen.black.bold;
     const categoryLabel = processedMs >= 1000 ? 'Slow: >= 1000ms' : processedMs >= 300 ? 'Moderate: 300–999ms' : 'Fast: < 300ms';
-    lines.push(`${durColor(` ⏱️ Processed in ${processedMs}ms `)} ${colors.gray(`[ ${categoryLabel} ]`)}`);
+    lines.push(`${durColor(` ⏱️ Processed in ${processedMs}ms `)} ${colors.blue(`[ ${categoryLabel} ]`)}`);
 
     const formatted = lines.join('\n');
     if (!isObservabilityRoute) {

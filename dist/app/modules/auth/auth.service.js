@@ -17,6 +17,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const http_status_codes_1 = require("http-status-codes");
 const config_1 = __importDefault(require("../../../config"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
+const authHelpers_1 = require("../../../helpers/authHelpers");
 const emailHelper_1 = require("../../../helpers/emailHelper");
 const jwtHelper_1 = require("../../../helpers/jwtHelper");
 const emailTemplate_1 = require("../../../shared/emailTemplate");
@@ -187,29 +188,7 @@ const changePasswordToDB = (user, payload) => __awaiter(void 0, void 0, void 0, 
     yield user_model_1.User.findOneAndUpdate({ _id: user.id }, updateData, { new: true });
 });
 const resendVerifyEmailToDB = (email) => __awaiter(void 0, void 0, void 0, function* () {
-    const isExistUser = yield user_model_1.User.findOne({ email });
-    if (!isExistUser) {
-        throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "User doesn't exist!");
-    }
-    if (isExistUser.verified) {
-        throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'User is already verified!');
-    }
-    // Generate new OTP
-    const otp = (0, generateOTP_1.default)();
-    // Save OTP to DB
-    const authentication = {
-        oneTimeCode: otp,
-        expireAt: new Date(Date.now() + 3 * 60000), // 3 minutes
-    };
-    yield user_model_1.User.findOneAndUpdate({ email }, { $set: { authentication } });
-    // Send email
-    const emailData = emailTemplate_1.emailTemplate.createAccount({
-        name: isExistUser.name,
-        email: isExistUser.email,
-        otp,
-    });
-    yield emailHelper_1.emailHelper.sendEmail(emailData);
-    return { otp }; // optional: just for logging/debugging
+    return (0, authHelpers_1.sendVerificationOTP)(email);
 });
 // Google OAuth login
 const googleLoginToDB = (user) => __awaiter(void 0, void 0, void 0, function* () {

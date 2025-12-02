@@ -5,9 +5,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const cors_1 = __importDefault(require("cors"));
 const yamljs_1 = __importDefault(require("yamljs"));
-// Ensure DB metrics plugin loads BEFORE any models compile
-require("./app/observability/mongooseMetrics");
-require("./app/middlewares/autoLabelBootstrap");
+/**
+ * ⚠️ CRITICAL IMPORT ORDER - DO NOT REORDER ⚠️
+ *
+ * The order below is carefully designed to prevent subtle bugs.
+ * Changing this order can break auto-labeling, metrics, or cause runtime errors.
+ *
+ * Why this order matters:
+ * 1. mongooseMetrics must load BEFORE any models compile (plugins must register first)
+ * 2. autoLabelBootstrap must load BEFORE routes import controllers/services
+ * 3. opentelemetry should load early for proper instrumentation
+ * 4. Third-party patches (bcrypt, JWT, Stripe) must load before their usage
+ * 5. Routes load LAST (they import controllers which need auto-labeling ready)
+ *
+ * See loadOrderValidator.ts for runtime validation.
+ */
+// 1️⃣ FIRST: Mongoose metrics plugin (BEFORE any models compile)
+require("./app/logging/mongooseMetrics");
+// 2️⃣ SECOND: Auto-labeling system (BEFORE routes import controllers)
+require("./app/logging/autoLabelBootstrap");
+// 3️⃣ THIRD: OpenTelemetry instrumentation
+require("./app/logging/opentelemetry");
+// 4️⃣ FOURTH: Third-party library patches
+require("./app/logging/patchBcrypt");
+require("./app/logging/patchJWT");
+require("./app/logging/patchStripe");
+// 5️⃣ LAST: Routes (imports controllers/services - auto-labeling must be ready)
 const routes_1 = __importDefault(require("./routes"));
 const morgen_1 = require("./shared/morgen");
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
@@ -15,13 +38,14 @@ const http_status_codes_1 = require("http-status-codes");
 const express_1 = __importDefault(require("express"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const globalErrorHandler_1 = __importDefault(require("./app/middlewares/globalErrorHandler"));
-const requestContext_1 = require("./app/middlewares/requestContext");
-const clientInfo_1 = require("./app/middlewares/clientInfo");
+const requestContext_1 = require("./app/logging/requestContext");
+const clientInfo_1 = require("./app/logging/clientInfo");
 // import './config/passport';
-const requestLogger_1 = require("./app/middlewares/requestLogger");
+const requestLogger_1 = require("./app/logging/requestLogger");
+const otelExpress_1 = require("./app/logging/otelExpress");
 const path_1 = __importDefault(require("path"));
 const passport_1 = __importDefault(require("passport"));
-const logger_1 = require("./shared/logger");
+const corsLogger_1 = require("./app/logging/corsLogger");
 // autoLabelBootstrap moved above router import to ensure controllers are wrapped before route binding
 const app = (0, express_1.default)();
 // Morgan logging
@@ -61,72 +85,22 @@ app.use((req, res, next) => {
     ].join(', '));
     next();
 });
-// CORS setup
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5174',
-    'https://task-titans-admin-orcin.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:5175',
-    'https://task-titans-six.vercel.app',
-    'https://task-titans-admin.vercel.app',
-    'https://tier-elected-proc-cumulative.trycloudflare.com',
-    'https://directory-supplements-adapter-designs.trycloudflare.com',
-    // Add common development origins
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'http://127.0.0.1:3002',
-    'http://localhost:3002',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174',
-    // Local backend preview ports for static test pages
-    'http://localhost:5000',
-    'http://localhost:5001',
-    'http://127.0.0.1:5000',
-    'http://127.0.0.1:5001',
-    'http://10.10.7.33:5001',
-    // Dev server alternate ports
-    'http://localhost:5003',
-    'http://127.0.0.1:5003',
-    'http://localhost:5005',
-    'http://127.0.0.1:5005',
-];
-// CORS debug logging (rate-limited) — enable with env CORS_DEBUG=true
-const CORS_DEBUG = String(process.env.CORS_DEBUG || '').toLowerCase() === 'true' || process.env.CORS_DEBUG === '1';
-const corsLogMap = new Map();
-const CORS_LOG_WINDOW_MS = 60000; // log at most once per origin per minute
-const maybeLogCors = (origin, allowed) => {
-    if (!CORS_DEBUG)
-        return;
-    const key = origin || 'no-origin';
-    const now = Date.now();
-    const last = corsLogMap.get(key) || 0;
-    if (now - last < CORS_LOG_WINDOW_MS)
-        return;
-    corsLogMap.set(key, now);
-    if (!origin) {
-        logger_1.logger.info('CORS allow: request without Origin header (Postman/mobile/native)');
-        return;
-    }
-    if (allowed)
-        logger_1.logger.info(`CORS allow: ${origin}`);
-    else
-        logger_1.errorLogger.warn(`CORS block: ${origin}`);
-};
+// OpenTelemetry middleware for timeline spans
+app.use(otelExpress_1.otelExpressMiddleware);
+// CORS setup moved to logging/corsLogger.ts (allowedOrigins, maybeLogCors)
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps, Postman)
         if (!origin) {
-            maybeLogCors(origin, true);
+            (0, corsLogger_1.maybeLogCors)(origin, true);
             return callback(null, true);
         }
-        if (allowedOrigins.includes(origin)) {
-            maybeLogCors(origin, true);
+        if (corsLogger_1.allowedOrigins.includes(origin)) {
+            (0, corsLogger_1.maybeLogCors)(origin, true);
             callback(null, true);
         }
         else {
-            maybeLogCors(origin, false);
+            (0, corsLogger_1.maybeLogCors)(origin, false);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -135,7 +109,7 @@ app.use((0, cors_1.default)({
 }));
 // Explicitly handle preflight OPTIONS requests
 app.options('*', (0, cors_1.default)({
-    origin: allowedOrigins,
+    origin: corsLogger_1.allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
 }));

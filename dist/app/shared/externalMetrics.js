@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.trackExternal = trackExternal;
 exports.recordExternal = recordExternal;
-const requestContext_1 = require("../middlewares/requestContext");
+const requestContext_1 = require("../logging/requestContext");
 const logger_1 = require("../../shared/logger");
 function trackExternal(label, fn) {
     return __awaiter(this, void 0, void 0, function* () {

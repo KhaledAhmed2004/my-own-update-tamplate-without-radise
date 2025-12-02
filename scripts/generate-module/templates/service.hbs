@@ -1,0 +1,97 @@
+import { StatusCodes } from 'http-status-codes';
+import mongoose from 'mongoose';
+import ApiError from '../../../errors/ApiError';
+{{#if hasSearch}}
+import QueryBuilder from '../../builder/QueryBuilder';
+{{/if}}
+import { I{{pascalCase}} } from './{{moduleName}}.interface';
+import { {{pascalCase}} } from './{{moduleName}}.model';
+
+/**
+ * Create {{displayName}}
+ */
+const create{{pascalCase}}ToDB = async (payload: Partial<I{{pascalCase}}>): Promise<I{{pascalCase}}> => {
+  const result = await {{pascalCase}}.create(payload);
+  if (!result) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create {{displayName}}');
+  }
+  return result;
+};
+
+/**
+ * Get {{displayName}} by ID
+ */
+const get{{pascalCase}}ByIdFromDB = async (id: string): Promise<I{{pascalCase}}> => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid {{displayName}} ID');
+  }
+
+  const result = await {{pascalCase}}.findById(id){{#if hasPopulate}}{{#each populateFields}}
+    .populate('{{name}}', '{{fields}}'){{/each}}{{/if}};
+
+  if (!result) {
+    throw new ApiError(StatusCodes.NOT_FOUND, '{{displayName}} not found');
+  }
+
+  return result;
+};
+
+/**
+ * Get all {{displayName}}s with search and pagination
+ */
+const getAll{{pascalCase}}sFromDB = async (query: Record<string, unknown>) => {
+{{#if hasSearch}}
+  const queryBuilder = new QueryBuilder({{pascalCase}}.find(), query)
+    .search([{{#each searchableFields}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}])
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const data = await queryBuilder.modelQuery{{#if hasPopulate}}{{#each populateFields}}
+    .populate('{{name}}', '{{fields}}'){{/each}}{{/if}};
+  const pagination = await queryBuilder.getPaginationInfo();
+
+  return { data, pagination };
+{{else}}
+  const data = await {{pascalCase}}.find(query as any){{#if hasPopulate}}{{#each populateFields}}
+    .populate('{{name}}', '{{fields}}'){{/each}}{{/if}};
+
+  return { data };
+{{/if}}
+};
+
+/**
+ * Update {{displayName}}
+ */
+const update{{pascalCase}}ToDB = async (
+  id: string,
+  payload: Partial<I{{pascalCase}}>
+): Promise<I{{pascalCase}} | null> => {
+  const isExist = await {{pascalCase}}.findById(id);
+  if (!isExist) {
+    throw new ApiError(StatusCodes.NOT_FOUND, '{{displayName}} not found');
+  }
+
+  const result = await {{pascalCase}}.findByIdAndUpdate(id, payload, { new: true });
+  return result;
+};
+
+/**
+ * Delete {{displayName}}
+ */
+const delete{{pascalCase}}FromDB = async (id: string): Promise<I{{pascalCase}} | null> => {
+  const result = await {{pascalCase}}.findByIdAndDelete(id);
+  if (!result) {
+    throw new ApiError(StatusCodes.NOT_FOUND, '{{displayName}} not found');
+  }
+  return result;
+};
+
+export const {{pascalCase}}Service = {
+  create{{pascalCase}}ToDB,
+  get{{pascalCase}}ByIdFromDB,
+  getAll{{pascalCase}}sFromDB,
+  update{{pascalCase}}ToDB,
+  delete{{pascalCase}}FromDB,
+};

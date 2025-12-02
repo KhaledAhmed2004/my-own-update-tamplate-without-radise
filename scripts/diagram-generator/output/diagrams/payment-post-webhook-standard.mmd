@@ -1,0 +1,7 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+
+    Client->>+Route: POST /webhook
+    Route-->>Client: 200 OK

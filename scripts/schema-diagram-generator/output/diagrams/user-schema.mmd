@@ -1,0 +1,25 @@
+erDiagram
+
+    USER {
+        ObjectId _id PK
+        String name "required"
+        String role
+        String email UK "required"
+        String password
+        String location
+        String gender "enum: male, female"
+        String dateOfBirth
+        String phone
+        String profilePicture
+        String status
+        Boolean verified
+        Mixed deviceTokens
+        Number averageRating
+        Number ratingsCount
+        String about
+        String googleId
+        Mixed achievements
+        Boolean authentication
+    }
+
+    %% Relationships

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vsce package --allow-missing-repository)",
+      "Bash(node scripts/code-review/reviewer.js:*)",
+      "Bash(del \"d:\\web projects\\marg\\my-own-update-tamplate-without-radise\\scripts\\code-review\\test-naming.ts\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

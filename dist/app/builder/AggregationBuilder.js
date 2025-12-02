@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.calculateGrowthDynamic = void 0;
-const requestContext_1 = require("../middlewares/requestContext");
+const requestContext_1 = require("../logging/requestContext");
 const http_status_1 = __importDefault(require("http-status"));
 const ApiError_1 = __importDefault(require("../../errors/ApiError"));
 class AggregationBuilder {
@@ -56,7 +56,8 @@ class AggregationBuilder {
             const res = yield this.model.aggregate(this.pipeline);
             const dur = Date.now() - _start;
             const modelName = ((_a = this.model) === null || _a === void 0 ? void 0 : _a.modelName) || ((_c = (_b = this.model) === null || _b === void 0 ? void 0 : _b.collection) === null || _c === void 0 ? void 0 : _c.name);
-            (0, requestContext_1.recordDbQuery)(dur, { model: modelName, operation: 'aggregate', cacheHit: false });
+            const pipelineSummary = summarizePipeline(this.pipeline);
+            (0, requestContext_1.recordDbQuery)(dur, { model: modelName, operation: 'aggregate', cacheHit: false, pipeline: pipelineSummary });
             return res;
         });
     }
@@ -395,3 +396,51 @@ const calculateGrowthDynamic = (Model_1, ...args_1) => __awaiter(void 0, [Model_
 });
 exports.calculateGrowthDynamic = calculateGrowthDynamic;
 exports.default = AggregationBuilder;
+// Compact summary for aggregation pipeline
+function summarizePipeline(pipeline) {
+    const parts = [];
+    for (const stage of pipeline) {
+        const key = stage && typeof stage === 'object' ? Object.keys(stage)[0] : undefined;
+        if (!key)
+            continue;
+        const val = stage[key];
+        switch (key) {
+            case '$match': {
+                const conds = val && typeof val === 'object' ? Object.keys(val) : [];
+                const firstKey = conds[0];
+                let display = `$match`;
+                if (firstKey) {
+                    const v = val[firstKey];
+                    const repr = typeof v === 'object' ? JSON.stringify(v) : String(v);
+                    display = `$match(${firstKey}=${repr})`;
+                }
+                parts.push(display);
+                break;
+            }
+            case '$group': {
+                const idVal = (val === null || val === void 0 ? void 0 : val._id) !== undefined ? val._id : undefined;
+                const idRepr = idVal !== undefined ? String(idVal) : undefined;
+                parts.push(idRepr ? `$group(_id='${idRepr}')` : `$group`);
+                break;
+            }
+            case '$sort': {
+                const keys = val && typeof val === 'object' ? Object.keys(val) : [];
+                parts.push(keys.length ? `$sort(${keys.join(',')})` : `$sort`);
+                break;
+            }
+            case '$project': {
+                const keys = val && typeof val === 'object' ? Object.keys(val) : [];
+                parts.push(keys.length ? `$project(${keys.length} fields)` : `$project`);
+                break;
+            }
+            case '$lookup': {
+                const from = (val === null || val === void 0 ? void 0 : val.from) ? String(val.from) : undefined;
+                parts.push(from ? `$lookup(from='${from}')` : `$lookup`);
+                break;
+            }
+            default:
+                parts.push(key);
+        }
+    }
+    return parts.join(' → ');
+}

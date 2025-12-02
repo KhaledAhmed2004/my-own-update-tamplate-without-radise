@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 Send Message Flow - Socket.IO Flow Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #16213e;
+            border-right: 1px solid #0f3460;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e94560;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .nav-list {
+            list-style: none;
+            flex: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 12px 15px;
+            color: #ccc;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .nav-link:hover {
+            background: #0f3460;
+            color: #fff;
+        }
+
+        .nav-link.active {
+            background: #e94560;
+            color: #fff;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: #16213e;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-desc {
+            font-size: 13px;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #d63850;
+        }
+
+        .btn-secondary {
+            background: #0f3460;
+            color: #ccc;
+        }
+
+        .btn-secondary:hover {
+            background: #1a4a7a;
+            color: #fff;
+        }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #0f3460;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        .zoom-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            background: #16213e;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-btn:hover {
+            background: #1a4a7a;
+            color: #fff;
+        }
+
+        .zoom-level {
+            font-size: 12px;
+            color: #888;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        /* Legend */
+        .legend {
+            background: #16213e;
+            padding: 12px 25px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* Diagram Container */
+        .diagram-wrapper {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+        }
+
+        .diagram-container {
+            min-width: max-content;
+            transform-origin: top left;
+            transition: transform 0.2s;
+        }
+
+        .mermaid {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            display: inline-block;
+            min-width: 100%;
+        }
+
+        /* Code Panel */
+        .code-panel {
+            display: none;
+            background: #0d1117;
+            border-top: 1px solid #0f3460;
+            max-height: 300px;
+            overflow: auto;
+        }
+
+        .code-panel.active {
+            display: block;
+        }
+
+        .code-panel pre {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #c9d1d9;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    🔌 Socket.IO Flows
+                </div>
+                <div class="sidebar-subtitle">Event Flow Diagrams</div>
+            </div>
+            <ul class="nav-list">
+                
+                <li class="nav-item">
+                    <a href="connection-flow.html" class="nav-link ">
+                        🔗 Connection & Auth Flow
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="send-message-flow.html" class="nav-link active">
+                        💬 Send Message Flow
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="typing-flow.html" class="nav-link ">
+                        ⌨️ Typing Indicators Flow
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="delivery-status-flow.html" class="nav-link ">
+                        ✅ Delivery/Read Status Flow
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="room-management-flow.html" class="nav-link ">
+                        🚪 Room Management Flow
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="presence-flow.html" class="nav-link ">
+                        👤 Presence Tracking Flow
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="disconnect-flow.html" class="nav-link ">
+                        🔌 Disconnect Flow
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="full-socket-flow.html" class="nav-link ">
+                        📋 All Events (Full Diagram)
+                    </a>
+                </li>
+                
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div>
+                    <div class="header-title">💬 Send Message Flow</div>
+                    <div class="header-desc">Message পাঠানো এবং broadcast</div>
+                </div>
+                <div class="header-actions">
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+                        <span class="zoom-level" id="zoomLevel">100%</span>
+                        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                        <button class="zoom-btn" onclick="resetZoom()" title="Reset">↺</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="toggleCode()">
+                        📝 Code
+                    </button>
+                    <button class="btn btn-secondary" onclick="copyCode()">
+                        📋 Copy
+                    </button>
+                    <a href="https://mermaid.live/edit" target="_blank" class="btn btn-primary">
+                        🔗 Mermaid Live
+                    </a>
+                </div>
+            </header>
+
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #3498db;"></span>
+                    <span>📱 Client</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #2ecc71;"></span>
+                    <span>🔌 Socket.IO</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #e74c3c;"></span>
+                    <span>🔐 Auth</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #f39c12;"></span>
+                    <span>🗄️ MongoDB</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #9b59b6;"></span>
+                    <span>👤 Presence</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #1abc9c;"></span>
+                    <span>📢 Room</span>
+                </div>
+            </div>
+
+            <!-- Diagram -->
+            <div class="diagram-wrapper" id="diagramWrapper">
+                <div class="diagram-container" id="diagramContainer">
+                    <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C as 📱 Client
+    participant API as 🌐 REST API
+    participant Svc as ⚙️ MessageService
+    participant DB as 🗄️ MongoDB
+    participant S as 🔌 Socket.IO
+    participant R as 📢 Chat Room
+    participant P as 👤 Presence
+    participant N as 🔔 Notification
+
+    Note over C,N: 💬 Send Message Flow
+
+    C->>API: POST /api/v1/message
+    Note right of C: {chatId, text, attachments?}
+
+    API->>Svc: sendMessageToDB(payload)
+
+    Svc->>DB: Chat.exists({_id: chatId, participants: userId})
+
+    alt Not Participant
+        DB-->>Svc: false
+        Svc-->>API: ❌ Unauthorized
+        API-->>C: 403 Forbidden
+    else Is Participant
+        DB-->>Svc: true
+
+        Svc->>DB: Message.create({chatId, sender, text, ...})
+        DB-->>Svc: message saved
+
+        Note over Svc,S: Real-time broadcast
+        Svc->>S: global.io
+        S->>R: io.to('chat::' + chatId).emit('MESSAGE_SENT')
+        R-->>R: All room members receive message
+
+        Note over Svc,P: Update unread counts
+        loop For each receiver (not sender)
+            Svc->>P: incrementUnreadCount(chatId, receiverId, 1)
+
+            Svc->>P: isOnline(receiverId)?
+            alt Offline
+                Svc->>N: sendNotification({title, text, receiver})
+            end
+        end
+
+        Svc-->>API: message response
+        API-->>C: 201 Created {message}
+    end
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Panel -->
+            <div class="code-panel" id="codePanel">
+                <pre id="mermaidCode">sequenceDiagram
+    autonumber
+    participant C as 📱 Client
+    participant API as 🌐 REST API
+    participant Svc as ⚙️ MessageService
+    participant DB as 🗄️ MongoDB
+    participant S as 🔌 Socket.IO
+    participant R as 📢 Chat Room
+    participant P as 👤 Presence
+    participant N as 🔔 Notification
+
+    Note over C,N: 💬 Send Message Flow
+
+    C-&gt;&gt;API: POST /api/v1/message
+    Note right of C: {chatId, text, attachments?}
+
+    API-&gt;&gt;Svc: sendMessageToDB(payload)
+
+    Svc-&gt;&gt;DB: Chat.exists({_id: chatId, participants: userId})
+
+    alt Not Participant
+        DB--&gt;&gt;Svc: false
+        Svc--&gt;&gt;API: ❌ Unauthorized
+        API--&gt;&gt;C: 403 Forbidden
+    else Is Participant
+        DB--&gt;&gt;Svc: true
+
+        Svc-&gt;&gt;DB: Message.create({chatId, sender, text, ...})
+        DB--&gt;&gt;Svc: message saved
+
+        Note over Svc,S: Real-time broadcast
+        Svc-&gt;&gt;S: global.io
+        S-&gt;&gt;R: io.to(&#039;chat::&#039; + chatId).emit(&#039;MESSAGE_SENT&#039;)
+        R--&gt;&gt;R: All room members receive message
+
+        Note over Svc,P: Update unread counts
+        loop For each receiver (not sender)
+            Svc-&gt;&gt;P: incrementUnreadCount(chatId, receiverId, 1)
+
+            Svc-&gt;&gt;P: isOnline(receiverId)?
+            alt Offline
+                Svc-&gt;&gt;N: sendNotification({title, text, receiver})
+            end
+        end
+
+        Svc--&gt;&gt;API: message response
+        API--&gt;&gt;C: 201 Created {message}
+    end
+</pre>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 30,
+                actorMargin: 80,
+                width: 180,
+                height: 50,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35,
+                mirrorActors: false,
+                bottomMarginAdj: 10,
+                useMaxWidth: false,
+            }
+        });
+
+        // Zoom functionality
+        let currentZoom = 1;
+        const zoomStep = 0.1;
+        const minZoom = 0.3;
+        const maxZoom = 3;
+
+        function updateZoom() {
+            const container = document.getElementById('diagramContainer');
+            container.style.transform = `scale(${currentZoom})`;
+            document.getElementById('zoomLevel').textContent = Math.round(currentZoom * 100) + '%';
+        }
+
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom = Math.min(currentZoom + zoomStep, maxZoom);
+                updateZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom = Math.max(currentZoom - zoomStep, minZoom);
+                updateZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            updateZoom();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === '=' || e.key === '+') {
+                    e.preventDefault();
+                    zoomIn();
+                } else if (e.key === '-') {
+                    e.preventDefault();
+                    zoomOut();
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    resetZoom();
+                }
+            }
+        });
+
+        // Mouse wheel zoom
+        document.getElementById('diagramWrapper').addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+            }
+        });
+
+        // Toggle code panel
+        function toggleCode() {
+            const panel = document.getElementById('codePanel');
+            panel.classList.toggle('active');
+        }
+
+        // Copy code
+        function copyCode() {
+            const code = document.getElementById('mermaidCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Copied to clipboard!');
+            });
+        }
+
+        // Show toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // Mouse drag to scroll
+        let isDragging = false;
+        let startX, startY, scrollLeft, scrollTop;
+
+        const wrapper = document.getElementById('diagramWrapper');
+
+        wrapper.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.mermaid')) {
+                isDragging = true;
+                wrapper.style.cursor = 'grabbing';
+                startX = e.pageX - wrapper.offsetLeft;
+                startY = e.pageY - wrapper.offsetTop;
+                scrollLeft = wrapper.scrollLeft;
+                scrollTop = wrapper.scrollTop;
+            }
+        });
+
+        wrapper.addEventListener('mouseleave', () => {
+            isDragging = false;
+            wrapper.style.cursor = 'default';
+        });
+
+        wrapper.addEventListener('mouseup', () => {
+            isDragging = false;
+            wrapper.style.cursor = 'default';
+        });
+
+        wrapper.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX - wrapper.offsetLeft;
+            const y = e.pageY - wrapper.offsetTop;
+            const walkX = (x - startX) * 1.5;
+            const walkY = (y - startY) * 1.5;
+            wrapper.scrollLeft = scrollLeft - walkX;
+            wrapper.scrollTop = scrollTop - walkY;
+        });
+    </script>
+</body>
+</html>

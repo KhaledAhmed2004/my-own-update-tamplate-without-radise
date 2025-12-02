@@ -1,0 +1,39 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Auth_Middleware
+    participant Controller
+    participant Service
+    participant Database
+    participant Helper_isOnline
+    participant Helper_setUnreadCount
+
+    Client->>+Route: GET /
+    Route->>+Auth_Middleware: Validate
+    Note over Auth_Middleware: 🔐 Authentication&#58; JWT token verify করা হচ্ছে
+    Note over Auth_Middleware: Roles&#58; USER_ROLES.TASKER, USER_ROLES.POSTER
+    Auth_Middleware->>-Route: Valid ✓
+    Route->>+Controller: ChatController.getChat
+    Controller->>+Service: ChatService.getChatFromDB()
+    Service->>+Database: Chat.find({ participants: { $in: [user.id] } })
+    Note over Database: 💾 Database Query&#58; MongoDB থেকে data fetch করা হচ্ছে
+    Database->>-Service: result
+    Service->>+Database: Message.findOne({
+        chatId: chat?._id,
+      })
+    Note over Database: 💾 Database Query&#58; MongoDB থেকে data fetch করা হচ্ছে
+    Database->>-Service: result
+    Service->>+Database: Message.countDocuments({
+          chatId: chat?._id,
+          sender:)
+    Note over Database: 💾 Database Query&#58; MongoDB থেকে data fetch করা হচ্ছে
+    Database->>-Service: result
+    Service->>Helper_isOnline: isOnline()
+    Helper_isOnline-->>Service: result
+    Service->>Helper_setUnreadCount: setUnreadCount()
+    Helper_setUnreadCount-->>Service: result
+    Service->>-Controller: result
+    Controller->>-Route: StatusCodes.OK - Chat Retrieve Successfully
+    Route-->>Client: Response
+    Note over Client: ✅ Chat Retrieve Successfully

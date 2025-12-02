@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CacheHelper = void 0;
 const node_cache_1 = __importDefault(require("node-cache"));
 const logger_1 = require("../../shared/logger");
-const requestContext_1 = require("../middlewares/requestContext");
+const requestContext_1 = require("../logging/requestContext");
 class CacheHelper {
     constructor(options = {}) {
         this.cache = new node_cache_1.default({

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AsyncLocalStorage } from 'async_hooks';
+import type { MemorySnapshot, CPUMetrics } from './performanceMetrics';
 
 type DbQueryRecord = {
   model?: string;
@@ -12,6 +13,13 @@ type DbQueryRecord = {
   suggestion?: string; // optimization hint for slow/missing index cases
   nReturned?: number; // documents returned by the operation
   executionStage?: string; // e.g., COLLSCAN, IXSCAN, FETCH
+  // 🆕 NEW: Enhanced query debugging fields (optional, non-breaking)
+  filter?: string; // JSON string of query filter (sensitive data masked)
+  sort?: string; // JSON string of sort fields
+  projection?: string; // JSON string of selected/excluded fields
+  limit?: number; // Limit value
+  skip?: number; // Skip value
+  callerLocation?: string; // File and line number where query was called (e.g., "user.service.ts:89")
 };
 
 type ContextStore = {
@@ -23,6 +31,14 @@ type ContextStore = {
     db: { hits: number; durations: number[]; queries: DbQueryRecord[] };
     cache: { hits: number; misses: number; hitDurations: number[]; missDurations: number[] };
     external: { count: number; durations: number[] };
+    // 🆕 NEW: Performance metrics (optional, non-breaking)
+    performance?: {
+      memoryStart?: MemorySnapshot;
+      memoryEnd?: MemorySnapshot;
+      cpuStart?: CPUMetrics;
+      cpuEnd?: CPUMetrics;
+      eventLoopSamples: number[];
+    };
   };
 };
 
@@ -70,6 +86,13 @@ export const recordDbQuery = (
     suggestion?: string;
     nReturned?: number;
     executionStage?: string;
+    // 🆕 NEW: Enhanced debugging fields (optional)
+    filter?: string;
+    sort?: string;
+    projection?: string;
+    limit?: number;
+    skip?: number;
+    callerLocation?: string;
   }
 ) => {
   const store = storage.getStore();
@@ -87,6 +110,13 @@ export const recordDbQuery = (
     suggestion: meta?.suggestion,
     nReturned: meta?.nReturned,
     executionStage: meta?.executionStage,
+    // 🆕 NEW: Include enhanced fields
+    filter: meta?.filter,
+    sort: meta?.sort,
+    projection: meta?.projection,
+    limit: meta?.limit,
+    skip: meta?.skip,
+    callerLocation: meta?.callerLocation,
   });
 };
 
@@ -112,6 +142,62 @@ export const recordExternalCall = (durationMs: number) => {
 };
 
 export const getMetrics = () => storage.getStore()?.metrics;
+
+// 🆕 NEW: Performance metrics helpers
+export const recordMemoryStart = (snapshot: MemorySnapshot) => {
+  const store = storage.getStore();
+  if (!store) return;
+  if (!store.metrics.performance) {
+    store.metrics.performance = {
+      eventLoopSamples: [],
+    };
+  }
+  store.metrics.performance.memoryStart = snapshot;
+};
+
+export const recordMemoryEnd = (snapshot: MemorySnapshot) => {
+  const store = storage.getStore();
+  if (!store) return;
+  if (!store.metrics.performance) {
+    store.metrics.performance = {
+      eventLoopSamples: [],
+    };
+  }
+  store.metrics.performance.memoryEnd = snapshot;
+};
+
+export const recordCPUStart = (metrics: CPUMetrics) => {
+  const store = storage.getStore();
+  if (!store) return;
+  if (!store.metrics.performance) {
+    store.metrics.performance = {
+      eventLoopSamples: [],
+    };
+  }
+  store.metrics.performance.cpuStart = metrics;
+};
+
+export const recordCPUEnd = (metrics: CPUMetrics) => {
+  const store = storage.getStore();
+  if (!store) return;
+  if (!store.metrics.performance) {
+    store.metrics.performance = {
+      eventLoopSamples: [],
+    };
+  }
+  store.metrics.performance.cpuEnd = metrics;
+};
+
+export const recordEventLoopSample = (lagMs: number) => {
+  const store = storage.getStore();
+  if (!store) return;
+  if (!store.metrics.performance) {
+    store.metrics.performance = {
+      eventLoopSamples: [],
+    };
+  }
+  store.metrics.performance.eventLoopSamples.push(lagMs);
+};
 
 // Helper to convert a base path segment like "auth" -> "AuthController"
 // Known base path -> Controller name mapping (handles plural/singular)

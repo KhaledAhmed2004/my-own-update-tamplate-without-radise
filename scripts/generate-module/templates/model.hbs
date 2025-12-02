@@ -1,0 +1,37 @@
+import { Schema, model } from 'mongoose';
+{{#if hasEnums}}
+import { I{{pascalCase}}, {{pascalCase}}Model{{#each enums}}, {{name}}{{/each}} } from './{{moduleName}}.interface';
+{{else}}
+import { I{{pascalCase}}, {{pascalCase}}Model } from './{{moduleName}}.interface';
+{{/if}}
+
+const {{camelCase}}Schema = new Schema<I{{pascalCase}}, {{pascalCase}}Model>(
+  {
+{{#each fields}}
+{{#unless (isTimestampField name)}}
+    {{name}}: {{{mongooseOptions}}},
+{{/unless}}
+{{/each}}
+  },
+  {
+    timestamps: {{timestamps}},
+    versionKey: false,
+  }
+);
+
+{{#if hasIndexes}}
+// Indexes
+{{#each indexes}}
+{{camelCase ../moduleName}}Schema.index({{{this}}});
+{{/each}}
+{{/if}}
+
+// Static methods
+{{camelCase}}Schema.statics.isExistById = async (id: string) => {
+  return await {{pascalCase}}.findById(id);
+};
+
+export const {{pascalCase}} = model<I{{pascalCase}}, {{pascalCase}}Model>(
+  '{{pascalCase}}',
+  {{camelCase}}Schema
+);

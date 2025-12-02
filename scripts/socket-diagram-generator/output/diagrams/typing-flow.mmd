@@ -1,0 +1,54 @@
+sequenceDiagram
+    autonumber
+    participant A as 📱 Client A
+    participant S as 🔌 Socket.IO
+    participant DB as 🗄️ MongoDB
+    participant T as ⏱️ Throttle (5s)
+    participant R as 📢 Chat Room
+    participant B as 👥 Other Clients
+
+    Note over A,B: ⌨️ Typing Indicator Flow
+
+    rect rgb(240, 248, 255)
+        Note over A,B: TYPING_START Event
+        A->>S: emit('TYPING_START', {chatId})
+
+        S->>DB: Chat.exists({_id: chatId, participants: userId})
+
+        alt Not Participant
+            DB-->>S: false
+            Note right of S: Event ignored (no error sent)
+        else Is Participant
+            DB-->>S: true
+
+            S->>T: Check throttle key: 'typing:chatId:userId'
+
+            alt Already Throttled (within 5s)
+                T-->>S: ❌ Key exists
+                Note right of S: Skip broadcast (throttled)
+            else Not Throttled
+                T-->>S: ✅ Key not found
+                S->>T: Set key (TTL: 5 seconds)
+
+                S->>R: io.to('chat::' + chatId).emit('TYPING_START')
+                R-->>B: on('TYPING_START', {userId, chatId})
+                Note right of B: 💭 Shows "User is typing..."
+            end
+        end
+    end
+
+    rect rgb(255, 248, 240)
+        Note over A,B: TYPING_STOP Event
+        A->>S: emit('TYPING_STOP', {chatId})
+
+        S->>DB: Chat.exists({_id: chatId, participants: userId})
+
+        alt Is Participant
+            DB-->>S: true
+            S->>T: Delete throttle key
+
+            S->>R: io.to('chat::' + chatId).emit('TYPING_STOP')
+            R-->>B: on('TYPING_STOP', {userId, chatId})
+            Note right of B: Typing indicator hidden
+        end
+    end

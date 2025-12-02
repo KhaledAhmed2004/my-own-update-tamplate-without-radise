@@ -8,9 +8,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const requestContext_1 = require("../middlewares/requestContext");
+const requestContext_1 = require("../logging/requestContext");
 const date_fns_1 = require("date-fns");
+const escape_string_regexp_1 = __importDefault(require("escape-string-regexp"));
 class QueryBuilder {
     constructor(modelQuery, query) {
         this.modelQuery = modelQuery;
@@ -20,10 +24,12 @@ class QueryBuilder {
     search(searchableFields) {
         var _a;
         if ((_a = this === null || this === void 0 ? void 0 : this.query) === null || _a === void 0 ? void 0 : _a.searchTerm) {
+            // Sanitize search term to prevent NoSQL injection via regex
+            const sanitizedTerm = (0, escape_string_regexp_1.default)(String(this.query.searchTerm));
             this.modelQuery = this.modelQuery.find({
                 $or: searchableFields.map(field => ({
                     [field]: {
-                        $regex: this.query.searchTerm,
+                        $regex: sanitizedTerm,
                         $options: 'i',
                     },
                 })),
@@ -350,12 +356,14 @@ class QueryBuilder {
     // 🔍 Search within populated fields
     searchInPopulatedFields(path, searchableFields, searchTerm, additionalMatch = {}) {
         if (searchTerm) {
+            // Sanitize search term to prevent NoSQL injection via regex
+            const sanitizedTerm = (0, escape_string_regexp_1.default)(searchTerm);
             const searchConditions = {
                 $and: [
                     {
                         $or: searchableFields.map(field => ({
                             [field]: {
-                                $regex: searchTerm,
+                                $regex: sanitizedTerm,
                                 $options: 'i',
                             },
                         })),

@@ -1,0 +1,117 @@
+config:
+  target: http://localhost:5000
+  phases:
+  - duration: 60
+    arrivalRate: 1
+    name: Warmup
+  - duration: 120
+    arrivalRate: 3
+    name: Ramp-up
+  - duration: 300
+    arrivalRate: 5
+    name: Sustained Load
+  variables:
+    timestamp: {{ $timestamp }}
+    randomId: {{ $randomNumber(1, 10000) }}
+  processor: ./artillery-processor.js
+  plugins:
+    expect:
+    metrics:
+      namespace: load-test-payment-flow
+scenarios:
+- name: Payment Flow
+  flow: 
+    0:
+      post:
+        url: /api/v1/auth/register
+        headers:
+        json:
+          dynamic: true
+        capture:
+        - json: $.data.user._id
+          as: userId
+        - json: $.data.accessToken
+          as: accessToken
+        - json: $.data.user.email
+          as: email
+        expect:
+        - statusCode: 201
+    1:
+      think: 2669
+    2:
+      post:
+        url: /api/v1/auth/login
+        headers:
+        json:
+          dynamic: true
+        capture:
+        - json: $.data.accessToken
+          as: accessToken
+        expect:
+        - statusCode: 200
+    3:
+      think: 2412
+    4:
+      post:
+        url: /api/v1/payments/create-intent
+        headers:
+          Authorization: Bearer {{ accessToken }}
+          Content-Type: application/json
+        json:
+          dynamic: true
+        capture:
+        - json: $.data.paymentIntent.id
+          as: paymentIntentId
+        - json: $.data.clientSecret
+          as: clientSecret
+        - json: $.data.paymentIntent.amount
+          as: amount
+        expect:
+        - statusCode: 201
+    5:
+      think: 2793
+    6:
+      post:
+        url: /api/v1/payments/confirm
+        headers:
+          Authorization: Bearer {{ accessToken }}
+          Content-Type: application/json
+        json:
+          dynamic: true
+        capture:
+        - json: $.data.payment._id
+          as: paymentId
+        - json: $.data.payment.status
+          as: status
+        expect:
+        - statusCode: 200
+    7:
+      think: 2948
+    8:
+      get:
+        url: /api/v1/payments/{{ {{ paymentId  }}}}
+        headers:
+          Authorization: Bearer {{ accessToken }}
+          Content-Type: application/json
+        expect:
+        - statusCode: 200
+    9:
+      think: 1711
+    10:
+      get:
+        url: /api/v1/payments/history?page=1&limit=10
+        headers:
+          Authorization: Bearer {{ accessToken }}
+          Content-Type: application/json
+        expect:
+        - statusCode: 200
+    11:
+      think: 1204
+    12:
+      get:
+        url: /api/v1/payments/statistics
+        headers:
+          Authorization: Bearer {{ accessToken }}
+          Content-Type: application/json
+        expect:
+        - statusCode: 200

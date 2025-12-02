@@ -1,0 +1,25 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Auth_Middleware
+    participant Controller
+    participant Service
+    participant Database
+
+    Client->>+Route: PATCH /:id/unblock
+    Route->>+Auth_Middleware: Validate
+    Note over Auth_Middleware: 🔐 Authentication&#58; JWT token verify করা হচ্ছে
+    Note over Auth_Middleware: Roles&#58; USER_ROLES.SUPER_ADMIN
+    Auth_Middleware->>-Route: Valid ✓
+    Route->>+Controller: UserController.unblockUser
+    Controller->>+Service: UserService.updateUserStatus()
+    Service->>+Database: User.findByIdAndUpdate(id,
+    { status },
+    { new: true })
+    Note over Database: 💾 Database Query&#58; MongoDB থেকে data fetch করা হচ্ছে
+    Database->>-Service: result
+    Service->>-Controller: result
+    Controller->>-Route: StatusCodes.OK - User unblocked successfully
+    Route-->>Client: Response
+    Note over Client: ✅ User unblocked successfully

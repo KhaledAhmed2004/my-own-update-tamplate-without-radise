@@ -1,0 +1,66 @@
+import express from 'express';
+import { USER_ROLES } from '../../../enums/user';
+import auth from '../../middlewares/auth';
+import validateRequest from '../../middlewares/validateRequest';
+{{#if hasFileUpload}}
+import { fileHandler } from '../../middlewares/fileHandler';
+{{/if}}
+import { {{pascalCase}}Controller } from './{{moduleName}}.controller';
+import { {{pascalCase}}Validation } from './{{moduleName}}.validation';
+
+const router = express.Router();
+
+/**
+ * Create {{displayName}}
+ */
+router.post(
+  '/',
+  auth({{#each roles.create}}USER_ROLES.{{this}}{{#unless @last}}, {{/unless}}{{/each}}),
+{{#if hasFileUpload}}
+  fileHandler([{{#each fileUploadFields}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}]),
+{{/if}}
+  validateRequest({{pascalCase}}Validation.create{{pascalCase}}ZodSchema),
+  {{pascalCase}}Controller.create{{pascalCase}}
+);
+
+/**
+ * Get all {{displayName}}s
+ */
+router.get(
+  '/',
+  auth({{#each roles.read}}USER_ROLES.{{this}}{{#unless @last}}, {{/unless}}{{/each}}),
+  {{pascalCase}}Controller.getAll{{pascalCase}}s
+);
+
+/**
+ * Get {{displayName}} by ID
+ */
+router.get(
+  '/:id',
+  auth({{#each roles.read}}USER_ROLES.{{this}}{{#unless @last}}, {{/unless}}{{/each}}),
+  {{pascalCase}}Controller.get{{pascalCase}}ById
+);
+
+/**
+ * Update {{displayName}}
+ */
+router.patch(
+  '/:id',
+  auth({{#each roles.update}}USER_ROLES.{{this}}{{#unless @last}}, {{/unless}}{{/each}}),
+{{#if hasFileUpload}}
+  fileHandler([{{#each fileUploadFields}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}]),
+{{/if}}
+  validateRequest({{pascalCase}}Validation.update{{pascalCase}}ZodSchema),
+  {{pascalCase}}Controller.update{{pascalCase}}
+);
+
+/**
+ * Delete {{displayName}}
+ */
+router.delete(
+  '/:id',
+  auth({{#each roles.delete}}USER_ROLES.{{this}}{{#unless @last}}, {{/unless}}{{/each}}),
+  {{pascalCase}}Controller.delete{{pascalCase}}
+);
+
+export const {{pascalCase}}Routes = router;

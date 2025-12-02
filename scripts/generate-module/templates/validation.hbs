@@ -1,0 +1,51 @@
+import { z } from 'zod';
+{{#if hasEnums}}
+{{#each enums}}
+import { {{name}} } from './{{../moduleName}}.interface';
+{{/each}}
+{{/if}}
+
+const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
+
+/**
+ * Validation schema for creating {{displayName}}
+ */
+const create{{pascalCase}}ZodSchema = z.object({
+  body: z
+    .object({
+{{#each validationFields}}
+      {{name}}: {{{zodValidation}}},
+{{/each}}
+    })
+    .strict(),
+});
+
+/**
+ * Validation schema for updating {{displayName}}
+ */
+const update{{pascalCase}}ZodSchema = z.object({
+  body: z
+    .object({
+{{#each validationFields}}
+      {{name}}: {{{zodValidationOptional}}},
+{{/each}}
+    })
+    .strict(),
+});
+
+/**
+ * Validation schema for getting {{displayName}} by ID
+ */
+const get{{pascalCase}}ByIdZodSchema = z.object({
+  params: z.object({
+    id: z
+      .string({ required_error: 'ID is required' })
+      .regex(mongoIdRegex, 'Invalid {{displayName}} ID format'),
+  }),
+});
+
+export const {{pascalCase}}Validation = {
+  create{{pascalCase}}ZodSchema,
+  update{{pascalCase}}ZodSchema,
+  get{{pascalCase}}ByIdZodSchema,
+};

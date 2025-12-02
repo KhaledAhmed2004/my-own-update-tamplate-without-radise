@@ -1,0 +1,12 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Auth_Middleware
+
+    Client->>+Route: GET /history
+    Route->>+Auth_Middleware: Validate
+    Note over Auth_Middleware: 🔐 Authentication&#58; JWT token verify করা হচ্ছে
+    Note over Auth_Middleware: Roles&#58; USER_ROLES.POSTER, USER_ROLES.TASKER, USER_ROLES.SUPER_ADMIN
+    Auth_Middleware->>-Route: Valid ✓
+    Route-->>Client: 200 OK

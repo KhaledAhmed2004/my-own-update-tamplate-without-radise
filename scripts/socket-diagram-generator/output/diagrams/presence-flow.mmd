@@ -1,0 +1,63 @@
+sequenceDiagram
+    autonumber
+    participant C as 📱 Client
+    participant S as 🔌 Socket.IO
+    participant P as 👤 PresenceHelper
+    participant Cache as 📦 NodeCache
+
+    Note over C,Cache: 👤 Presence Tracking System
+
+    rect rgb(240, 255, 240)
+        Note over C,Cache: User Goes Online
+
+        C->>S: connect (with JWT)
+        S->>P: setOnline(userId)
+        P->>Cache: onlineSet.add(userId)
+
+        S->>P: incrConnCount(userId)
+        P->>Cache: connCount[userId]++
+        Note right of Cache: Supports multiple sessions
+
+        S->>P: updateLastActive(userId)
+        P->>Cache: lastActive[userId] = Date.now()
+    end
+
+    rect rgb(240, 248, 255)
+        Note over C,Cache: Check Online Status
+
+        S->>P: isOnline(userId)
+        P->>Cache: onlineSet.has(userId)
+        Cache-->>P: true/false
+        P-->>S: boolean
+
+        S->>P: getLastActive(userId)
+        P->>Cache: lastActive[userId]
+        Cache-->>P: timestamp
+        P-->>S: number | undefined
+    end
+
+    rect rgb(255, 248, 240)
+        Note over C,Cache: Room Tracking
+
+        S->>P: addUserRoom(userId, chatId)
+        P->>Cache: userRooms[userId].add(chatId)
+
+        S->>P: getUserRooms(userId)
+        P->>Cache: userRooms[userId]
+        Cache-->>P: Set<chatId>
+        P-->>S: string[]
+
+        S->>P: removeUserRoom(userId, chatId)
+        P->>Cache: userRooms[userId].delete(chatId)
+    end
+
+    rect rgb(255, 240, 240)
+        Note over C,Cache: Connection Count (Multi-Session)
+
+        S->>P: getConnCount(userId)
+        P->>Cache: connCount[userId]
+        Cache-->>P: number
+        P-->>S: count
+
+        Note right of Cache: User can have multiple devices
+    end

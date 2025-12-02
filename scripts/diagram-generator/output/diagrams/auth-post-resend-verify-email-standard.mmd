@@ -1,0 +1,22 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Controller
+    participant Service
+    participant Database
+    participant Helper_emailHelper
+
+    Client->>+Route: POST /resend-verify-email
+    Route->>+Controller: AuthController.resendVerifyEmail
+    Note over Controller: 📥 Extract from req.body&#58; {email}
+    Controller->>+Service: AuthService.resendVerifyEmailToDB()
+    Service->>+Database: User.findOne({ email })
+    Note over Database: 💾 Database Query&#58; MongoDB থেকে data fetch করা হচ্ছে
+    Database->>-Service: result
+    Service->>Helper_emailHelper: emailHelper()
+    Helper_emailHelper-->>Service: result
+    Service->>-Controller: result
+    Controller->>-Route: StatusCodes.OK - Verification code has been resent to your email.
+    Route-->>Client: Response
+    Note over Client: ✅ Verification code has been resent to your email.

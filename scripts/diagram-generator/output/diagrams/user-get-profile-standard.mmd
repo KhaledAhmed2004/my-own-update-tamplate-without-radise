@@ -1,0 +1,19 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Auth_Middleware
+    participant Controller
+    participant Service
+
+    Client->>+Route: GET /profile
+    Route->>+Auth_Middleware: Validate
+    Note over Auth_Middleware: 🔐 Authentication&#58; JWT token verify করা হচ্ছে
+    Note over Auth_Middleware: Roles&#58; USER_ROLES.POSTER, USER_ROLES.TASKER, USER_ROLES.SUPER_ADMIN
+    Auth_Middleware->>-Route: Valid ✓
+    Route->>+Controller: UserController.getUserProfile
+    Controller->>+Service: UserService.getUserProfileFromDB()
+    Service->>-Controller: result
+    Controller->>-Route: StatusCodes.OK - Profile data retrieved successfully
+    Route-->>Client: Response
+    Note over Client: ✅ Profile data retrieved successfully

@@ -1,0 +1,12 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Validation
+
+    Client->>+Route: POST /verify-email
+    Route->>+Validation: Validate
+    Note over Validation: ✓ Validation&#58; সমস্ত data সঠিক কিনা যাচাই করা হচ্ছে
+    Note over Validation: Schema&#58; AuthValidation.createVerifyEmailZodSchema
+    Validation->>-Route: Valid ✓
+    Route-->>Client: 200 OK

@@ -13,7 +13,15 @@ jwt.sign = function patchedJwtSign(...args: any[]) {
   const tracer = trace.getTracer('app');
   return tracer.startActiveSpan('JWT.sign', span => {
     try {
-      return originalSign.apply(jwt, args);
+      const result = originalSign.apply(jwt, args);
+
+      // Capture result message
+      try {
+        span.setAttribute('jwt.result.type', 'token_generated');
+        span.setAttribute('jwt.result.message', 'Tokens generated');
+      } catch {}
+
+      return result;
     } catch (err) {
       try { span.recordException(err as any); } catch {}
       throw err;
@@ -28,7 +36,15 @@ jwt.verify = function patchedJwtVerify(...args: any[]) {
   const tracer = trace.getTracer('app');
   return tracer.startActiveSpan('JWT.verify', span => {
     try {
-      return originalVerify.apply(jwt, args);
+      const result = originalVerify.apply(jwt, args);
+
+      // Capture result message
+      try {
+        span.setAttribute('jwt.result.type', 'token_verified');
+        span.setAttribute('jwt.result.message', 'Token verified successfully');
+      } catch {}
+
+      return result;
     } catch (err) {
       try { span.recordException(err as any); } catch {}
       throw err;

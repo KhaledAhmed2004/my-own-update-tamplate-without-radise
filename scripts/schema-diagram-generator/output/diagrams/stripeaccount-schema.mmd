@@ -1,0 +1,16 @@
+erDiagram
+
+    STRIPEACCOUNT {
+        ObjectId _id PK
+        ObjectId userId FK "required, ref: User"
+        String stripeAccountId "required"
+        Boolean onboardingCompleted
+        Boolean chargesEnabled
+        Boolean payoutsEnabled
+        String country
+        String currency
+        String businessType "required"
+    }
+
+    %% Relationships
+    %% STRIPEACCOUNT -> USER (userId) - target not found

@@ -1,0 +1,28 @@
+erDiagram
+
+    MESSAGE {
+        ObjectId _id PK
+        ObjectId chatId FK "required, indexed, ref: Chat"
+        ObjectId sender FK "required, indexed, ref: User"
+        String text
+        String type "enum: text, image, media..."
+        Mixed attachments
+        EmbeddedArray deliveredTo "embedded[]"
+        EmbeddedArray readBy "embedded[]"
+        String status "enum: sent, delivered, seen"
+        Date editedAt
+    }
+
+    MESSAGE_DELIVEREDTO {
+        Mixed type
+    }
+    MESSAGE ||--o{ MESSAGE_DELIVEREDTO : "embeds"
+
+    MESSAGE_READBY {
+        Mixed type
+    }
+    MESSAGE ||--o{ MESSAGE_READBY : "embeds"
+
+    %% Relationships
+    %% MESSAGE -> CHAT (chatId) - target not found
+    %% MESSAGE -> USER (sender) - target not found

@@ -1,0 +1,37 @@
+sequenceDiagram
+    autonumber
+    participant C as 📱 Client
+    participant S as 🔌 Socket.IO
+    participant A as 🔐 JWT Auth
+    participant P as 👤 Presence
+
+    Note over C,P: 🔗 Connection & Authentication Flow
+
+    C->>S: connect({auth: {token: JWT}})
+
+    Note over S: Extract token from handshake
+    S->>S: token = socket.handshake.auth.token
+
+    alt Token Missing
+        S-->>C: ❌ disconnect(true)
+        Note right of C: Connection rejected
+    else Token Present
+        S->>A: jwtHelper.verifyToken(token)
+
+        alt Token Invalid
+            A-->>S: ❌ JWT Error
+            S-->>C: ❌ disconnect(true)
+        else Token Valid
+            A-->>S: ✅ payload {id: userId}
+
+            Note over S,P: Initialize user session
+            S->>P: setOnline(userId)
+            S->>P: incrConnCount(userId)
+            S->>P: updateLastActive(userId)
+
+            S->>S: socket.join('user::' + userId)
+
+            Note right of C: ✅ Connection established
+            S-->>C: Connected to user room
+        end
+    end

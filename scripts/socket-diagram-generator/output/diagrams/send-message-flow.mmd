@@ -1,0 +1,48 @@
+sequenceDiagram
+    autonumber
+    participant C as 📱 Client
+    participant API as 🌐 REST API
+    participant Svc as ⚙️ MessageService
+    participant DB as 🗄️ MongoDB
+    participant S as 🔌 Socket.IO
+    participant R as 📢 Chat Room
+    participant P as 👤 Presence
+    participant N as 🔔 Notification
+
+    Note over C,N: 💬 Send Message Flow
+
+    C->>API: POST /api/v1/message
+    Note right of C: {chatId, text, attachments?}
+
+    API->>Svc: sendMessageToDB(payload)
+
+    Svc->>DB: Chat.exists({_id: chatId, participants: userId})
+
+    alt Not Participant
+        DB-->>Svc: false
+        Svc-->>API: ❌ Unauthorized
+        API-->>C: 403 Forbidden
+    else Is Participant
+        DB-->>Svc: true
+
+        Svc->>DB: Message.create({chatId, sender, text, ...})
+        DB-->>Svc: message saved
+
+        Note over Svc,S: Real-time broadcast
+        Svc->>S: global.io
+        S->>R: io.to('chat::' + chatId).emit('MESSAGE_SENT')
+        R-->>R: All room members receive message
+
+        Note over Svc,P: Update unread counts
+        loop For each receiver (not sender)
+            Svc->>P: incrementUnreadCount(chatId, receiverId, 1)
+
+            Svc->>P: isOnline(receiverId)?
+            alt Offline
+                Svc->>N: sendNotification({title, text, receiver})
+            end
+        end
+
+        Svc-->>API: message response
+        API-->>C: 201 Created {message}
+    end

@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Route
+    participant Auth_Middleware
+    participant Controller
+    participant Service
+    participant Database
+
+    Client->>+Route: GET /
+    Route->>+Auth_Middleware: Validate
+    Note over Auth_Middleware: 🔐 Authentication&#58; JWT token verify করা হচ্ছে
+    Note over Auth_Middleware: Roles&#58; USER_ROLES.SUPER_ADMIN
+    Auth_Middleware->>-Route: Valid ✓
+    Route->>+Controller: UserController.getAllUsers
+    Controller->>+Service: UserService.getAllUsers()
+    Service->>+Database: User.find(...)
+    Note over Database: 💾 Database Query&#58; MongoDB থেকে data fetch করা হচ্ছে
+    Database->>-Service: result
+    Service->>-Controller: result
+    Controller->>-Route: StatusCodes.OK - Users retrieved successfully
+    Route-->>Client: Response
+    Note over Client: ✅ Users retrieved successfully

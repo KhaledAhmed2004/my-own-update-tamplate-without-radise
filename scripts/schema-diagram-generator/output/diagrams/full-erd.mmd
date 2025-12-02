@@ -1,0 +1,115 @@
+erDiagram
+
+    BOOKMARK {
+        ObjectId _id PK
+        ObjectId user FK "required, ref: User"
+        ObjectId target "required, polymorphic: dynamic"
+        String targetModel "required"
+    }
+
+    CHAT {
+        ObjectId _id PK
+        EmbeddedArray participants "embedded[]"
+        Boolean status
+    }
+
+    CHAT_PARTICIPANTS {
+        Mixed type
+        Mixed ref
+    }
+    CHAT ||--o{ CHAT_PARTICIPANTS : "embeds"
+
+    MESSAGE {
+        ObjectId _id PK
+        ObjectId chatId FK "required, indexed, ref: Chat"
+        ObjectId sender FK "required, indexed, ref: User"
+        String text
+        String type "enum: text, image, media..."
+        Mixed attachments
+        EmbeddedArray deliveredTo "embedded[]"
+        EmbeddedArray readBy "embedded[]"
+        String status "enum: sent, delivered, seen"
+        Date editedAt
+    }
+
+    MESSAGE_DELIVEREDTO {
+        Mixed type
+    }
+    MESSAGE ||--o{ MESSAGE_DELIVEREDTO : "embeds"
+
+    MESSAGE_READBY {
+        Mixed type
+    }
+    MESSAGE ||--o{ MESSAGE_READBY : "embeds"
+
+    NOTIFICATION {
+        ObjectId _id PK
+        String title
+        String text "required"
+        ObjectId receiver FK "required, ref: User"
+        Boolean isRead
+        String type "enum: ADMIN, BID, BOOKING..."
+        ObjectId referenceId
+    }
+
+    PAYMENT {
+        ObjectId _id PK
+        ObjectId taskId FK "required, ref: Task"
+        ObjectId posterId FK "required, ref: User"
+        ObjectId freelancerId FK "required, ref: User"
+        ObjectId bidId FK "ref: Bid"
+        Number amount "required"
+        Number platformFee "required"
+        Number freelancerAmount "required"
+        String stripePaymentIntentId "required"
+        String stripeTransferId
+        String status "required"
+        String currency "required"
+        Schema metadata
+        String refundReason
+    }
+
+    STRIPEACCOUNT {
+        ObjectId _id PK
+        ObjectId userId FK "required, ref: User"
+        String stripeAccountId "required"
+        Boolean onboardingCompleted
+        Boolean chargesEnabled
+        Boolean payoutsEnabled
+        String country
+        String currency
+        String businessType "required"
+    }
+
+    USER {
+        ObjectId _id PK
+        String name "required"
+        String role
+        String email UK "required"
+        String password
+        String location
+        String gender "enum: male, female"
+        String dateOfBirth
+        String phone
+        String profilePicture
+        String status
+        Boolean verified
+        Mixed deviceTokens
+        Number averageRating
+        Number ratingsCount
+        String about
+        String googleId
+        Mixed achievements
+        Boolean authentication
+    }
+
+    %% Relationships
+    BOOKMARK }o--|| USER : "user (N:1)"
+    MESSAGE }o--|| CHAT : "chatId (N:1)"
+    MESSAGE }o--|| USER : "sender (N:1)"
+    NOTIFICATION }o--|| USER : "receiver (N:1)"
+    %% PAYMENT -> TASK (taskId) - target not found
+    PAYMENT }o--|| USER : "posterId (N:1)"
+    PAYMENT }o--|| USER : "freelancerId (N:1)"
+    %% PAYMENT -> BID (bidId) - target not found
+    STRIPEACCOUNT }o--|| USER : "userId (N:1)"
