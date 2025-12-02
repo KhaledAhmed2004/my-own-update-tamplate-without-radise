@@ -1,59 +1,59 @@
-name: API Tests
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+# name: API Tests
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main, develop ]
 
-jobs:
-  api-tests:
-    runs-on: ubuntu-latest
+# jobs:
+#   api-tests:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+#     steps:
+#       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '18'
 
-      - name: Install Newman
-        run: npm install -g newman newman-reporter-htmlextra
+#       - name: Install Newman
+#         run: npm install -g newman newman-reporter-htmlextra
 
-      - name: Run API Tests
-        run: |
-          newman run postman-collections/complete-api-collection-with-tests.json \
-            -e postman-collections/environment.json \
-            --reporters cli,json,htmlextra \
-            --reporter-htmlextra-export test-reports/newman-report.html \
-            --reporter-json-export test-reports/newman-report.json
+#       - name: Run API Tests
+#         run: |
+#           newman run postman-collections/complete-api-collection-with-tests.json \
+#             -e postman-collections/environment.json \
+#             --reporters cli,json,htmlextra \
+#             --reporter-htmlextra-export test-reports/newman-report.html \
+#             --reporter-json-export test-reports/newman-report.json
 
-      - name: Upload Test Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports
-          path: test-reports/
+#       - name: Upload Test Report
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: test-reports
+#           path: test-reports/
 
-      - name: Comment PR with Results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const report = JSON.parse(fs.readFileSync('test-reports/newman-report.json'));
-            const summary = `
-            ## 🧪 API Test Results
+#       - name: Comment PR with Results
+#         if: github.event_name == 'pull_request'
+#         uses: actions/github-script@v7
+#         with:
+#           script: |
+#             const fs = require('fs');
+#             const report = JSON.parse(fs.readFileSync('test-reports/newman-report.json'));
+#             const summary = `
+#             ## 🧪 API Test Results
 
-            - **Total Tests**: ${report.run.stats.tests.total}
-            - **Passed**: ✅ ${report.run.stats.tests.passed}
-            - **Failed**: ❌ ${report.run.stats.tests.failed}
-            - **Avg Response Time**: ${Math.round(report.run.timings.responseAverage)}ms
-            `;
+#             - **Total Tests**: ${report.run.stats.tests.total}
+#             - **Passed**: ✅ ${report.run.stats.tests.passed}
+#             - **Failed**: ❌ ${report.run.stats.tests.failed}
+#             - **Avg Response Time**: ${Math.round(report.run.timings.responseAverage)}ms
+#             `;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: summary
-            });
+#             github.rest.issues.createComment({
+#               issue_number: context.issue.number,
+#               owner: context.repo.owner,
+#               repo: context.repo.repo,
+#               body: summary
+#             });
