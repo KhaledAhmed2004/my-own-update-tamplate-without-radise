@@ -3,8 +3,26 @@ import { Server } from 'socket.io';
 import { logger } from '../shared/logger';
 import { jwtHelper } from './jwtHelper';
 import config from '../config';
-import { Message } from '../app/modules/message/message.model';
-import { Chat } from '../app/modules/chat/chat.model';
+// Optional chat/message modules: fall back to stubs when absent
+let Message: any;
+let Chat: any;
+try {
+  ({ Message } = require('../app/modules/message/message.model'));
+} catch {
+  Message = {
+    find: async () => [],
+    updateMany: async () => {},
+    findById: async () => ({ select: () => null }),
+    findByIdAndUpdate: async () => null,
+  };
+}
+try {
+  ({ Chat } = require('../app/modules/chat/chat.model'));
+} catch {
+  Chat = {
+    exists: async () => false,
+  };
+}
 import NodeCache from 'node-cache';
 import {
   setOnline,

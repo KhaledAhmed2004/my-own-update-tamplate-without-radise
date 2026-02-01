@@ -12,90 +12,71 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationService = exports.markAllNotificationsAsRead = void 0;
+exports.NotificationService = void 0;
 const notification_model_1 = require("./notification.model");
-const QueryBuilder_1 = __importDefault(require("../../builder/QueryBuilder"));
-// get notifications
-const getNotificationFromDB = (user, query) => __awaiter(void 0, void 0, void 0, function* () {
-    // 1️⃣ Initialize QueryBuilder for user's notifications
-    const notificationQuery = new QueryBuilder_1.default(notification_model_1.Notification.find({ receiver: user.id }), query)
-        .search(['title', 'text'])
-        .filter()
-        .dateFilter()
-        .sort()
-        .paginate()
-        .fields();
-    // 2️⃣ Execute the query and get filtered & paginated results
-    const { data, pagination } = yield notificationQuery.getFilteredResults();
-    // 3️⃣ Count unread notifications separately
-    const unreadCount = yield notification_model_1.Notification.countDocuments({
-        receiver: user.id,
-        isRead: false,
+const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
+const http_status_codes_1 = require("http-status-codes");
+const listForUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    return notification_model_1.NotificationModel.find({ userId }).sort({ createdAt: -1 });
+});
+const markAllRead = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    yield notification_model_1.NotificationModel.updateMany({ userId, read: false }, { $set: { read: true } });
+    return { updated: true };
+});
+const markRead = (id_1, userId_1, ...args_1) => __awaiter(void 0, [id_1, userId_1, ...args_1], void 0, function* (id, userId, read = true) {
+    const doc = yield notification_model_1.NotificationModel.findById(id);
+    if (!doc)
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, 'Notification not found');
+    if (doc.userId !== userId)
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, 'Not authorized');
+    doc.read = read;
+    yield doc.save();
+    return doc;
+});
+const deleteById = (id, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const doc = yield notification_model_1.NotificationModel.findById(id);
+    if (!doc)
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, 'Notification not found');
+    if (doc.userId !== userId)
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, 'Not authorized');
+    yield notification_model_1.NotificationModel.findByIdAndDelete(id);
+    return { deleted: true };
+});
+// Helper creators for triggers
+const createForPreferenceCard = (params) => __awaiter(void 0, void 0, void 0, function* () {
+    const subtitle = params.surgeonName && params.procedure
+        ? `${params.surgeonName} — ${params.procedure}`
+        : params.cardTitle;
+    return notification_model_1.NotificationModel.create({
+        userId: params.userId,
+        type: 'PREFERENCE_CARD_CREATED',
+        title: 'New Card Added',
+        subtitle,
+        link: { label: 'View Card', url: `/cards/${params.cardId}` },
+        resourceType: 'PreferenceCard',
+        resourceId: params.cardId,
+        read: false,
+        icon: 'card',
     });
-    // 4️⃣ Return structured response
-    return {
-        data,
-        pagination,
-        unreadCount,
-    };
 });
-const markNotificationAsReadIntoDB = (notificationId, userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const notification = yield notification_model_1.Notification.findOneAndUpdate({ _id: notificationId, receiver: userId }, { isRead: true }, { new: true });
-    if (!notification) {
-        throw new Error('Notification not found');
-    }
-    return notification;
-});
-const markAllNotificationsAsRead = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield notification_model_1.Notification.updateMany({ receiver: userId, isRead: false }, // only unread notifications
-    { isRead: true });
-    return {
-        modifiedCount: result.modifiedCount, // number of notifications updated
-        message: 'All notifications marked as read',
-    };
-});
-exports.markAllNotificationsAsRead = markAllNotificationsAsRead;
-// Fetch admin notifications with query, pagination, unread count
-const adminNotificationFromDB = (query) => __awaiter(void 0, void 0, void 0, function* () {
-    const notificationQuery = new QueryBuilder_1.default(notification_model_1.Notification.find({ type: 'ADMIN' }), query)
-        .search(['title', 'text'])
-        .filter()
-        .dateFilter()
-        .sort()
-        .paginate()
-        .fields();
-    const { data, pagination } = yield notificationQuery.getFilteredResults();
-    const unreadCount = yield notification_model_1.Notification.countDocuments({
-        type: 'ADMIN',
-        isRead: false,
+const createForEventScheduled = (params) => __awaiter(void 0, void 0, void 0, function* () {
+    return notification_model_1.NotificationModel.create({
+        userId: params.userId,
+        type: 'EVENT_SCHEDULED',
+        title: 'Event Scheduled',
+        subtitle: `${params.title}${params.whenText ? ' on ' + params.whenText : ''}`,
+        link: { label: 'View Event', url: `/events/${params.eventId}` },
+        resourceType: 'Event',
+        resourceId: params.eventId,
+        read: false,
+        icon: 'calendar',
     });
-    return {
-        data,
-        pagination,
-        unreadCount,
-    };
-});
-// Mark a single admin notification as read
-const adminMarkNotificationAsReadIntoDB = (notificationId) => __awaiter(void 0, void 0, void 0, function* () {
-    const notification = yield notification_model_1.Notification.findOneAndUpdate({ _id: notificationId, type: 'ADMIN' }, { isRead: true }, { new: true });
-    if (!notification) {
-        throw new Error('Admin notification not found');
-    }
-    return notification;
-});
-// Mark all admin notifications as read
-const adminMarkAllNotificationsAsRead = () => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield notification_model_1.Notification.updateMany({ type: 'ADMIN', isRead: false }, { isRead: true });
-    return {
-        modifiedCount: result.modifiedCount,
-        message: 'All admin notifications marked as read',
-    };
 });
 exports.NotificationService = {
-    adminNotificationFromDB,
-    getNotificationFromDB,
-    markNotificationAsReadIntoDB,
-    adminMarkNotificationAsReadIntoDB,
-    markAllNotificationsAsRead: exports.markAllNotificationsAsRead,
-    adminMarkAllNotificationsAsRead,
+    listForUser,
+    markAllRead,
+    markRead,
+    deleteById,
+    createForPreferenceCard,
+    createForEventScheduled,
 };

@@ -13,72 +13,62 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationController = void 0;
+const http_status_codes_1 = require("http-status-codes");
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
-const http_status_codes_1 = require("http-status-codes");
 const notification_service_1 = require("./notification.service");
-const getNotificationFromDB = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const listMyNotifications = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.user;
-    const result = yield notification_service_1.NotificationService.getNotificationFromDB(user, req.query);
+    const result = yield notification_service_1.NotificationService.listForUser(user.id);
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: 'Notifications retrieved successfully',
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        message: 'Notifications fetched',
         data: result,
     });
 }));
-const readNotification = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const markAllRead = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.user;
-    const notification = yield notification_service_1.NotificationService.markNotificationAsReadIntoDB(req.params.id, user.id);
+    const result = yield notification_service_1.NotificationService.markAllRead(user.id);
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: 'Notification Read Successfully',
-        data: notification,
-    });
-}));
-const readAllNotifications = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = req.user;
-    const result = yield notification_service_1.NotificationService.markAllNotificationsAsRead(user.id);
-    (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
-        success: true,
-        message: result.message,
-        data: { updated: result.modifiedCount },
-    });
-}));
-const adminNotificationFromDB = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield notification_service_1.NotificationService.adminNotificationFromDB(req.query);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
-        success: true,
-        message: 'Admin notifications retrieved successfully',
+        message: 'All notifications marked read',
         data: result,
     });
 }));
-const adminMarkNotificationAsRead = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const notification = yield notification_service_1.NotificationService.adminMarkNotificationAsReadIntoDB(req.params.id);
+const markRead = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    const user = req.user;
+    const read = (_b = (_a = req.body) === null || _a === void 0 ? void 0 : _a.read) !== null && _b !== void 0 ? _b : true;
+    const result = yield notification_service_1.NotificationService.markRead(req.params.id, user.id, read);
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: 'Admin notification marked as read successfully',
-        data: notification,
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        message: read ? 'Notification marked read' : 'Notification marked unread',
+        data: result,
     });
 }));
-const adminMarkAllNotificationsAsRead = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield notification_service_1.NotificationService.adminMarkAllNotificationsAsRead();
+const deleteNotification = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.user;
+    const result = yield notification_service_1.NotificationService.deleteById(req.params.id, user.id);
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: result.message,
-        data: { updated: result.modifiedCount },
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        message: 'Notification deleted',
+        data: result,
     });
 }));
 exports.NotificationController = {
-    adminNotificationFromDB,
-    getNotificationFromDB,
-    readAllNotifications,
-    readNotification,
-    adminMarkNotificationAsRead,
-    adminMarkAllNotificationsAsRead,
+    listMyNotifications,
+    markAllRead,
+    markRead,
+    deleteNotification,
+    // Backward-compatible names expected by existing routes
+    getNotificationFromDB: listMyNotifications,
+    readNotification: markRead,
+    readAllNotifications: markAllRead,
+    adminNotificationFromDB: listMyNotifications,
+    adminMarkNotificationAsRead: markRead,
+    adminMarkAllNotificationsAsRead: markAllRead,
 };

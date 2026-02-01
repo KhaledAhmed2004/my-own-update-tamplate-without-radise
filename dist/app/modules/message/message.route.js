@@ -20,6 +20,7 @@ const message_controller_1 = require("./message.controller");
 const getFilePath_1 = require("../../../shared/getFilePath");
 const fileUploadHandler_1 = __importDefault(require("../../middlewares/fileUploadHandler"));
 const router = express_1.default.Router();
+// মেসেজ পাঠানো — টেক্সট/ইমেজ/মিডিয়া/ডক সহ অ্যাটাচমেন্ট সাপোর্ট
 router.post('/', (0, auth_1.default)(user_1.USER_ROLES.TASKER, user_1.USER_ROLES.POSTER), (0, fileUploadHandler_1.default)(), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
@@ -68,7 +69,8 @@ router.post('/', (0, auth_1.default)(user_1.USER_ROLES.TASKER, user_1.USER_ROLES
         return res.status(500).json({ message: 'Invalid File Format' });
     }
 }), message_controller_1.MessageController.sendMessage);
+// আইডি অনুযায়ী মেসেজ ফেচ — চ্যাট/মেসেজ আইডি দিয়ে
 router.get('/:id', (0, auth_1.default)(user_1.USER_ROLES.TASKER, user_1.USER_ROLES.POSTER), message_controller_1.MessageController.getMessage);
-// Mark all messages in a chat as read
+// একটি চ্যাটের সব মেসেজ read হিসেবে মার্ক করা
 router.post('/chat/:chatId/read', (0, auth_1.default)(user_1.USER_ROLES.TASKER, user_1.USER_ROLES.POSTER), message_controller_1.MessageController.markChatRead);
 exports.MessageRoutes = router;

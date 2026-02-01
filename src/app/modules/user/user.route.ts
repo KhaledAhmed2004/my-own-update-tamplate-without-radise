@@ -9,57 +9,59 @@ import express from 'express';
 
 const router = express.Router();
 
-// Create a new user
+// Create new user
 router.post(
   '/',
-  rateLimitMiddleware({ windowMs: 60_000, max: 20, routeName: 'create-user' }),
   validateRequest(UserValidation.createUserZodSchema),
-  UserController.createUser
+  UserController.createUser,
 );
 
-// Get user own profile
+// Fetch own profile details
 router.get(
   '/profile',
-  auth(USER_ROLES.POSTER, USER_ROLES.TASKER, USER_ROLES.SUPER_ADMIN),
-  UserController.getUserProfile
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
+  UserController.getUserProfile,
 );
 
-// Update user profile
+// Update own profile
 router.patch(
   '/profile',
-  auth(USER_ROLES.POSTER, USER_ROLES.TASKER, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   fileHandler(['profilePicture']),
   validateRequest(UserValidation.updateUserZodSchema),
-  UserController.updateProfile
+  UserController.updateProfile,
 );
 
-// Get all users
-router.get('/', auth(USER_ROLES.SUPER_ADMIN), UserController.getAllUsers);
+// List user roles only
+router.get('/', auth(USER_ROLES.SUPER_ADMIN), UserController.getAllUserRoles);
 
-
-// Block a user
+// Block user
 router.patch(
   '/:id/block',
   auth(USER_ROLES.SUPER_ADMIN),
-  UserController.blockUser
+  UserController.blockUser,
 );
 
-// Unblock a user
+// Unblock user — super admin
 router.patch(
   '/:id/unblock',
   auth(USER_ROLES.SUPER_ADMIN),
-  UserController.unblockUser
+  UserController.unblockUser,
 );
 
-// Get a specific user by ID
+// Get specific user details by ID (super admin)
 router.get('/:id', auth(USER_ROLES.SUPER_ADMIN), UserController.getUserById);
 
-// Public user details (allow guest), apply rate limit
+// Public user details (guest allowed) — rate limited
 router.get(
   '/:id/user',
-  auth(USER_ROLES.GUEST),
-  rateLimitMiddleware({ windowMs: 60_000, max: 60, routeName: 'public-user-details' }),
-  UserController.getUserDetailsById
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
+  rateLimitMiddleware({
+    windowMs: 60_000,
+    max: 60,
+    routeName: 'public-user-details',
+  }),
+  UserController.getUserDetailsById,
 );
 
 export const UserRoutes = router;

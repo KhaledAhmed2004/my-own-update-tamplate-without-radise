@@ -2,9 +2,7 @@ import { Model } from 'mongoose';
 
 export enum USER_ROLES {
   SUPER_ADMIN = 'SUPER_ADMIN',
-  POSTER = 'POSTER',
-  TASKER = 'TASKER',
-  GUEST = 'GUEST',
+  USER = 'USER',
 }
 
 export enum USER_STATUS {
@@ -31,6 +29,8 @@ export type IUser = {
   gender: 'male' | 'female';
   dateOfBirth: string;
   phone: string;
+  specialty?: string;
+  hospital?: string;
   profilePicture?: string;
   status: USER_STATUS;
   verified: boolean;

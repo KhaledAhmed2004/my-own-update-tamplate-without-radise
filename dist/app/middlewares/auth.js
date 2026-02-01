@@ -16,16 +16,10 @@ const http_status_codes_1 = require("http-status-codes");
 const config_1 = __importDefault(require("../../config"));
 const ApiError_1 = __importDefault(require("../../errors/ApiError"));
 const jwtHelper_1 = require("../../helpers/jwtHelper");
-const user_1 = require("../../enums/user");
 const auth = (...allowedRoles) => (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const authHeader = req.headers.authorization;
-        // 1️⃣ Allow GUEST access if route permits it and no token is provided
-        if (!authHeader && allowedRoles.includes(user_1.USER_ROLES.GUEST)) {
-            req.user = { role: user_1.USER_ROLES.GUEST, id: null, email: null };
-            return next();
-        }
-        // 2️⃣ No token provided and route doesn't allow guests
+        // 1️⃣ No token provided — require authentication for all protected routes
         if (!authHeader) {
             throw new ApiError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, 'Authorization token is required');
         }
@@ -45,7 +39,7 @@ const auth = (...allowedRoles) => (req, res, next) => __awaiter(void 0, void 0, 
         }
         // 6️⃣ Attach verified user to request
         req.user = verifiedUser;
-        // 7️⃣ Role-based access check
+        // 7️⃣ Role-based access check — SUPER_ADMIN-only system
         if (allowedRoles.length && !allowedRoles.includes(verifiedUser.role)) {
             throw new ApiError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, "You don't have permission to access this API");
         }

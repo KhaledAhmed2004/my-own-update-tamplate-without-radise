@@ -30,11 +30,11 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
             console.error('❌ Google profile missing email:', profile);
             return done(new Error('No email found in Google profile'));
         }
-        // Frontend থেকে role নেওয়া
+        // Read role from frontend
         const frontendRole = req.query.role || 'user';
-        // ইউজার খুঁজে বের করা
+        // Find user
         let user = yield user_model_1.User.findOne({ email });
-        // ইউজার আছে কি না চেক
+        // Check if user exists
         if (user) {
             // Blocked/Deleted check
             if (user.status === user_interface_1.USER_STATUS.RESTRICTED ||
@@ -42,7 +42,7 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
                 console.warn(`🚫 Restricted/Deleted user tried to login: ${email}`);
                 return done(new Error('Account is deactivated.'));
             }
-            // Google ID link করা না থাকলে link করা
+            // Link Google ID if not already linked
             if (!user.googleId) {
                 try {
                     user.googleId = profile.id;
@@ -56,7 +56,7 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
             }
             return done(null, user);
         }
-        // নতুন ইউজার তৈরি
+        // Create new user
         try {
             user = yield user_model_1.User.create({
                 name: profile.displayName,

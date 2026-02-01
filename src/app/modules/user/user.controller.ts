@@ -38,7 +38,7 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
 
   const result = await UserService.updateProfileToDB(
     user as JwtPayload,
-    payload
+    payload,
   );
 
   sendResponse(res, {
@@ -49,13 +49,13 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.getAllUsers(req.query);
+const getAllUserRoles = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.getAllUserRoles(req.query);
 
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: 'Users retrieved successfully',
+    message: 'User roles retrieved successfully',
     pagination: result.pagination,
     data: result.data,
   });
@@ -115,7 +115,7 @@ export const UserController = {
   createUser,
   getUserProfile,
   updateProfile,
-  getAllUsers,
+  getAllUserRoles,
   blockUser,
   unblockUser,
   getUserById,

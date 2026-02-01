@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteStripeAccountService = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const http_status_1 = __importDefault(require("http-status"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
@@ -151,6 +152,7 @@ const deleteStripeAccountService = (accountId) => __awaiter(void 0, void 0, void
         throw (0, stripe_1.handleStripeError)(error);
     }
 });
+exports.deleteStripeAccountService = deleteStripeAccountService;
 // Update local account status from Stripe account.update webhook
 const handleAccountUpdated = (account) => __awaiter(void 0, void 0, void 0, function* () {
     const completed = account.charges_enabled && account.payouts_enabled;

@@ -1,131 +1,81 @@
-import { JwtPayload } from 'jsonwebtoken';
-import { INotification } from './notification.interface';
-import { Notification } from './notification.model';
-import QueryBuilder from '../../builder/QueryBuilder';
+import { NotificationModel } from './notification.model';
+import ApiError from '../../../errors/ApiError';
+import { StatusCodes } from 'http-status-codes';
 
-// get notifications
-const getNotificationFromDB = async (
-  user: JwtPayload,
-  query: Record<string, unknown>
-) => {
-  // 1️⃣ Initialize QueryBuilder for user's notifications
-  const notificationQuery = new QueryBuilder<INotification>(
-    Notification.find({ receiver: user.id }),
-    query
-  )
-    .search(['title', 'text'])
-    .filter()
-    .dateFilter()
-    .sort()
-    .paginate()
-    .fields();
+const listForUser = async (userId: string) => {
+  return NotificationModel.find({ userId }).sort({ createdAt: -1 });
+};
 
-  // 2️⃣ Execute the query and get filtered & paginated results
-  const { data, pagination } = await notificationQuery.getFilteredResults();
+const markAllRead = async (userId: string) => {
+  await NotificationModel.updateMany({ userId, read: false }, { $set: { read: true } });
+  return { updated: true };
+};
 
-  // 3️⃣ Count unread notifications separately
-  const unreadCount = await Notification.countDocuments({
-    receiver: user.id,
-    isRead: false,
+const markRead = async (id: string, userId: string, read = true) => {
+  const doc = await NotificationModel.findById(id);
+  if (!doc) throw new ApiError(StatusCodes.NOT_FOUND, 'Notification not found');
+  if (doc.userId !== userId) throw new ApiError(StatusCodes.FORBIDDEN, 'Not authorized');
+  doc.read = read;
+  await doc.save();
+  return doc;
+};
+
+const deleteById = async (id: string, userId: string) => {
+  const doc = await NotificationModel.findById(id);
+  if (!doc) throw new ApiError(StatusCodes.NOT_FOUND, 'Notification not found');
+  if (doc.userId !== userId) throw new ApiError(StatusCodes.FORBIDDEN, 'Not authorized');
+  await NotificationModel.findByIdAndDelete(id);
+  return { deleted: true };
+};
+
+// Helper creators for triggers
+const createForPreferenceCard = async (params: {
+  userId: string;
+  cardId: string;
+  cardTitle: string;
+  surgeonName?: string;
+  procedure?: string;
+}) => {
+  const subtitle = params.surgeonName && params.procedure
+    ? `${params.surgeonName} — ${params.procedure}`
+    : params.cardTitle;
+  return NotificationModel.create({
+    userId: params.userId,
+    type: 'PREFERENCE_CARD_CREATED',
+    title: 'New Card Added',
+    subtitle,
+    link: { label: 'View Card', url: `/cards/${params.cardId}` },
+    resourceType: 'PreferenceCard',
+    resourceId: params.cardId,
+    read: false,
+    icon: 'card',
   });
-
-  // 4️⃣ Return structured response
-  return {
-    data,
-    pagination,
-    unreadCount,
-  };
 };
 
-const markNotificationAsReadIntoDB = async (
-  notificationId: string,
-  userId: string
-) => {
-  const notification = await Notification.findOneAndUpdate(
-    { _id: notificationId, receiver: userId },
-    { isRead: true },
-    { new: true }
-  );
-
-  if (!notification) {
-    throw new Error('Notification not found');
-  }
-
-  return notification;
-};
-
-export const markAllNotificationsAsRead = async (userId: string) => {
-  const result = await Notification.updateMany(
-    { receiver: userId, isRead: false }, // only unread notifications
-    { isRead: true }
-  );
-
-  return {
-    modifiedCount: result.modifiedCount, // number of notifications updated
-    message: 'All notifications marked as read',
-  };
-};
-
-// Fetch admin notifications with query, pagination, unread count
-const adminNotificationFromDB = async (query: Record<string, unknown>) => {
-  const notificationQuery = new QueryBuilder<INotification>(
-    Notification.find({ type: 'ADMIN' }),
-    query
-  )
-    .search(['title', 'text'])
-    .filter()
-    .dateFilter()
-    .sort()
-    .paginate()
-    .fields();
-
-  const { data, pagination } = await notificationQuery.getFilteredResults();
-
-  const unreadCount = await Notification.countDocuments({
-    type: 'ADMIN',
-    isRead: false,
+const createForEventScheduled = async (params: {
+  userId: string;
+  eventId: string;
+  title: string;
+  whenText?: string; // e.g., "2026-01-08 at 08:00"
+}) => {
+  return NotificationModel.create({
+    userId: params.userId,
+    type: 'EVENT_SCHEDULED',
+    title: 'Event Scheduled',
+    subtitle: `${params.title}${params.whenText ? ' on ' + params.whenText : ''}`,
+    link: { label: 'View Event', url: `/events/${params.eventId}` },
+    resourceType: 'Event',
+    resourceId: params.eventId,
+    read: false,
+    icon: 'calendar',
   });
-
-  return {
-    data,
-    pagination,
-    unreadCount,
-  };
-};
-
-// Mark a single admin notification as read
-const adminMarkNotificationAsReadIntoDB = async (notificationId: string) => {
-  const notification = await Notification.findOneAndUpdate(
-    { _id: notificationId, type: 'ADMIN' },
-    { isRead: true },
-    { new: true }
-  );
-
-  if (!notification) {
-    throw new Error('Admin notification not found');
-  }
-
-  return notification;
-};
-
-// Mark all admin notifications as read
-const adminMarkAllNotificationsAsRead = async () => {
-  const result = await Notification.updateMany(
-    { type: 'ADMIN', isRead: false },
-    { isRead: true }
-  );
-
-  return {
-    modifiedCount: result.modifiedCount,
-    message: 'All admin notifications marked as read',
-  };
 };
 
 export const NotificationService = {
-  adminNotificationFromDB,
-  getNotificationFromDB,
-  markNotificationAsReadIntoDB,
-  adminMarkNotificationAsReadIntoDB,
-  markAllNotificationsAsRead,
-  adminMarkAllNotificationsAsRead,
+  listForUser,
+  markAllRead,
+  markRead,
+  deleteById,
+  createForPreferenceCard,
+  createForEventScheduled,
 };

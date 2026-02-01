@@ -7,21 +7,21 @@ import { AuthValidation } from './auth.validation';
 import passport from 'passport';
 const router = express.Router();
 
-// User Login
+// User login
 router.post(
   '/login',
   validateRequest(AuthValidation.createLoginZodSchema),
   AuthController.loginUser
 );
 
-// Google OAuth Login
+// Google OAuth login — redirect with profile/email scopes
 router.get('/google', (req, res, next) => {
   passport.authenticate('google', {
     scope: ['profile', 'email'],
   })(req, res, next);
 });
 
-// Google OAuth Callback
+// Google OAuth callback — handle sign-in after Google returns
 router.get(
   '/google/callback',
   (req, res, next) => {
@@ -31,46 +31,46 @@ router.get(
   AuthController.googleCallback
 );
 
-// User Logout
+// User logout — invalidate active sessions/tokens
 router.post(
   '/logout',
-  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.TASKER, USER_ROLES.POSTER),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   AuthController.logoutUser
 );
 
-// Forget Password Request
+// Password reset request — send reset link via email
 router.post(
   '/forget-password',
   validateRequest(AuthValidation.createForgetPasswordZodSchema),
   AuthController.forgetPassword
 );
 
-// Email Verification
+// Email verification — verify via code/token
 router.post(
   '/verify-email',
   validateRequest(AuthValidation.createVerifyEmailZodSchema),
   AuthController.verifyEmail
 );
 
-// Reset Password
+// Password reset — set new password with valid token
 router.post(
   '/reset-password',
   validateRequest(AuthValidation.createResetPasswordZodSchema),
   AuthController.resetPassword
 );
 
-// Change Password
+// Change password — authenticated user provides old/new password
 router.post(
   '/change-password',
-  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.TASKER, USER_ROLES.POSTER),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   validateRequest(AuthValidation.createChangePasswordZodSchema),
   AuthController.changePassword
 );
 
-// Resend Verification Email
+// Resend verification email
 router.post('/resend-verify-email', AuthController.resendVerifyEmail);
 
-// Refresh Token
+// Refresh token — renew access token
 router.post(
   '/refresh-token',
   validateRequest(AuthValidation.createRefreshTokenZodSchema),

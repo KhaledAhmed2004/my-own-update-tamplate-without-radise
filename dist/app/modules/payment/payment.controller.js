@@ -111,10 +111,7 @@ exports.getPaymentsController = (0, catchAsync_1.default)((req, res) => __awaite
         filters.dateFrom = new Date(dateFrom);
     if (dateTo)
         filters.dateTo = new Date(dateTo);
-    const result = yield (0, payment_service_1.getPayments)(filters, {
-        page: Number(page) || 1,
-        limit: Number(limit) || 10,
-    });
+    const result = yield (0, payment_service_1.getPayments)(filters, Number(page) || 1, Number(limit) || 10);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,

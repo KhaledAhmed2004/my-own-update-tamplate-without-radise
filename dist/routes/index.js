@@ -6,12 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_route_1 = require("../app/modules/auth/auth.route");
 const user_route_1 = require("../app/modules/user/user.route");
-const chat_route_1 = require("../app/modules/chat/chat.route");
-const message_route_1 = require("../app/modules/message/message.route");
-const payment_routes_1 = require("../app/modules/payment/payment.routes");
-const bookmark_route_1 = require("../app/modules/bookmark/bookmark.route");
 const notification_routes_1 = require("../app/modules/notification/notification.routes");
-const scrape_route_1 = require("../app/modules/scrape/scrape.route");
+const subscription_route_1 = require("../app/modules/subscription/subscription.route");
+const event_route_1 = require("../app/modules/event/event.route");
+const preference_card_route_1 = require("../app/modules/preference-card/preference-card.route");
+const admin_route_1 = require("../app/modules/admin/admin.route");
+const doctor_route_1 = require("../app/modules/doctor/doctor.route");
+const supplies_route_1 = require("../app/modules/supplies/supplies.route");
+const sutures_route_1 = require("../app/modules/sutures/sutures.route");
 const router = express_1.default.Router();
 const apiRoutes = [
     {
@@ -23,28 +25,36 @@ const apiRoutes = [
         route: auth_route_1.AuthRoutes,
     },
     {
-        path: '/chats',
-        route: chat_route_1.ChatRoutes,
-    },
-    {
-        path: '/messages',
-        route: message_route_1.MessageRoutes,
-    },
-    {
-        path: '/payments',
-        route: payment_routes_1.PaymentRoutes,
-    },
-    {
-        path: '/bookmarks',
-        route: bookmark_route_1.BookmarkRoutes,
-    },
-    {
         path: '/notifications',
         route: notification_routes_1.NotificationRoutes,
     },
     {
-        path: '/scrape',
-        route: scrape_route_1.ScrapeRoutes,
+        path: '/subscription',
+        route: subscription_route_1.SubscriptionRoutes,
+    },
+    {
+        path: '/events',
+        route: event_route_1.EventRoutes,
+    },
+    {
+        path: '/preference-card',
+        route: preference_card_route_1.PreferenceCardRoutes,
+    },
+    {
+        path: '/dashboard',
+        route: admin_route_1.AdminRoutes,
+    },
+    {
+        path: '/doctors',
+        route: doctor_route_1.DoctorRoutes,
+    },
+    {
+        path: '/supplies',
+        route: supplies_route_1.SuppliesRoutes,
+    },
+    {
+        path: '/sutures',
+        route: sutures_route_1.SuturesRoutes,
     },
 ];
 apiRoutes.forEach(route => router.use(route.path, route.route));

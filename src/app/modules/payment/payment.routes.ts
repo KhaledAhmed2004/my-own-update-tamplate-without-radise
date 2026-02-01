@@ -7,71 +7,77 @@ import { StripeConnectController } from './stripeConnect.controller';
 
 const router = express.Router();
 
-// Webhook routes (no authentication required)
-// Note: Raw body parsing is handled at app level for webhook routes
+// Webhook route (no authentication required)
+// Note: raw body parsing for webhook is set at app level
 router.post(
   '/webhook',
   WebhookController.handleStripeWebhook
 );
 
-// Stripe Connect account management
+// Create/manage Stripe Connect account
 router.post(
   '/stripe/account',
-  auth(USER_ROLES.TASKER),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   StripeConnectController.createStripeAccountController
 );
 
+// Stripe onboarding link — visible to tasker/admin
 router.get(
   '/stripe/onboarding',
-  auth(USER_ROLES.TASKER, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   StripeConnectController.getOnboardingLinkController
 );
 
+// Check Stripe onboarding status — all roles
 router.get(
   '/stripe/onboarding-status',
-  auth(USER_ROLES.TASKER, USER_ROLES.POSTER, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   StripeConnectController.checkOnboardingStatusController
 );
 
-// Payment history route for poster, tasker, super admin
+// Payment history — poster/tasker/super admin
 router.get(
   '/history',
-  auth(USER_ROLES.POSTER, USER_ROLES.TASKER, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   PaymentController.getPaymentHistoryController
 );
 
-// Retrieve current intent and client_secret by bidId
+// Get current PaymentIntent + client_secret by bidId
 router.get(
   '/by-bid/:bidId/current-intent',
-  auth(USER_ROLES.POSTER, USER_ROLES.TASKER, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   PaymentController.getCurrentIntentByBidController
 );
 
+// Refund payment — poster/super admin
 router.post(
   '/refund/:paymentId',
-  auth(USER_ROLES.POSTER, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   PaymentController.refundPaymentController
 );
 
-// Payment information retrieval
+// Specific payment details — role-based access
 router.get(
   '/:paymentId',
-  auth(USER_ROLES.POSTER, USER_ROLES.TASKER, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   PaymentController.getPaymentByIdController
 );
 
+// All payments list — super admin
 router.get(
   '/',
   auth(USER_ROLES.SUPER_ADMIN),
   PaymentController.getPaymentsController
 );
 
+// Payment stats — super admin
 router.get(
   '/stats',
   auth(USER_ROLES.SUPER_ADMIN),
   PaymentController.getPaymentStatsController
 );
 
+// Delete Stripe account — super admin
 router.delete(
   '/account/:accountId',
   auth(USER_ROLES.SUPER_ADMIN),

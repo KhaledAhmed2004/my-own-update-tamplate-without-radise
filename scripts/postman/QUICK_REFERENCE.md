@@ -15,8 +15,8 @@ node scripts/postman/generate-all.js
 # Generate single module
 node scripts/postman/generate-all.js auth
 
-# Generate environments
-node scripts/postman/generate-all.js --env
+# (Optional) Generate external environment file
+node scripts/postman/generate-all.js --env-file
 
 # Force fresh (ignore existing)
 node scripts/postman/generate-all.js --force

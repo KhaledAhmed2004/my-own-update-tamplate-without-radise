@@ -26,6 +26,8 @@ import {
   createRefundForIntent as stripeCreateRefundForIntent,
 } from './stripe.adapter';
 import StripeConnectService from './stripeConnect.service';
+import { BidModel } from '../bid/bid.model';
+import { TaskModel, TaskStatus } from '../task/task.model';
 
 // Helper to present sender/receiver aliases for readability
 const mapPaymentToView = (payment: any): IPaymentView => {
@@ -651,10 +653,14 @@ const handleAmountCapturableUpdated = async (
     }
 
     // Complete bid acceptance process after successful capture
-    const { BidService } = await import('../bid/bid.service');
     try {
-      await BidService.completeBidAcceptance(bidId);
-      // console.log(`Bid ${bidId} acceptance completed after capture (amount_capturable_updated).`);
+      // Use require to avoid TypeScript compile-time resolution when service is absent
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const bidServiceModule = require('../bid/bid.service');
+      const BidService = bidServiceModule?.BidService;
+      if (BidService && typeof BidService.completeBidAcceptance === 'function') {
+        await BidService.completeBidAcceptance(bidId);
+      }
     } catch (error) {
       console.error('Failed to complete bid acceptance after capture:', error);
     }

@@ -22,13 +22,13 @@ passport.use(
           return done(new Error('No email found in Google profile'));
         }
 
-        // Frontend থেকে role নেওয়া
+        // Read role from frontend
         const frontendRole = (req.query.role as USER_ROLES) || 'user';
 
-        // ইউজার খুঁজে বের করা
+        // Find user
         let user = await User.findOne({ email });
 
-        // ইউজার আছে কি না চেক
+        // Check if user exists
         if (user) {
           // Blocked/Deleted check
           if (
@@ -39,7 +39,7 @@ passport.use(
             return done(new Error('Account is deactivated.'));
           }
 
-          // Google ID link করা না থাকলে link করা
+          // Link Google ID if not already linked
           if (!user.googleId) {
             try {
               user.googleId = profile.id;
@@ -57,7 +57,7 @@ passport.use(
           return done(null, user);
         }
 
-        // নতুন ইউজার তৈরি
+        // Create new user
         try {
           user = await User.create({
             name: profile.displayName,

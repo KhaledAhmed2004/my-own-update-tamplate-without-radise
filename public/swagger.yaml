@@ -244,7 +244,7 @@ components:
         name:
           type: string
           example: John Doe Updated
-        contact:
+        phone:
           type: string
           example: '+1234567891'
         email:
@@ -254,7 +254,13 @@ components:
         location:
           type: string
           example: Los Angeles, USA
-        image:
+        specialty:
+          type: string
+          example: Cardiology
+        hospital:
+          type: string
+          example: City Hospital
+        profilePicture:
           type: string
           format: binary
           description: Profile image file
@@ -272,12 +278,18 @@ components:
         email:
           type: string
           example: john@example.com
-        contact:
+        phone:
           type: string
           example: '+1234567890'
         location:
           type: string
           example: New York, USA
+        specialty:
+          type: string
+          example: Cardiology
+        hospital:
+          type: string
+          example: City Hospital
         role:
           type: string
           enum:
@@ -285,7 +297,7 @@ components:
             - ADMIN
             - USER
           example: USER
-        image:
+        profilePicture:
           type: string
           example: https://i.ibb.co/z5YHLV9/profile.png
         status:
@@ -1792,14 +1804,25 @@ paths:
             schema:
               type: object
               properties:
-                data:
+                name:
                   type: string
-                  description: JSON string containing profile update data
-                  example: '{"name":"Updated Name","contact":"+1234567891"}'
-                image:
+                  example: Updated Name
+                phone:
+                  type: string
+                  example: '+1234567891'
+                specialty:
+                  type: string
+                  example: Cardiology
+                hospital:
+                  type: string
+                  example: City Hospital
+                location:
+                  type: string
+                  example: Los Angeles, USA
+                profilePicture:
                   type: string
                   format: binary
-                  description: Profile image file
+                  description: Profile image file (field name: profilePicture)
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateProfileRequest'

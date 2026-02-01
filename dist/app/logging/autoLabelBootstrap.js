@@ -346,5 +346,7 @@ const autoDiscoverAndWrap = () => {
         process.exit(1);
     }
 };
-// Execute auto-discovery immediately
-autoDiscoverAndWrap();
+// Execute auto-discovery immediately (skip in test environment)
+if (process.env.NODE_ENV !== 'test') {
+    autoDiscoverAndWrap();
+}

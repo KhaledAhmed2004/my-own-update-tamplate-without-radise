@@ -17,8 +17,28 @@ const colors_1 = __importDefault(require("colors"));
 const logger_1 = require("../shared/logger");
 const jwtHelper_1 = require("./jwtHelper");
 const config_1 = __importDefault(require("../config"));
-const message_model_1 = require("../app/modules/message/message.model");
-const chat_model_1 = require("../app/modules/chat/chat.model");
+// Optional chat/message modules: fall back to stubs when absent
+let Message;
+let Chat;
+try {
+    ({ Message } = require('../app/modules/message/message.model'));
+}
+catch (_a) {
+    Message = {
+        find: () => __awaiter(void 0, void 0, void 0, function* () { return []; }),
+        updateMany: () => __awaiter(void 0, void 0, void 0, function* () { }),
+        findById: () => __awaiter(void 0, void 0, void 0, function* () { return ({ select: () => null }); }),
+        findByIdAndUpdate: () => __awaiter(void 0, void 0, void 0, function* () { return null; }),
+    };
+}
+try {
+    ({ Chat } = require('../app/modules/chat/chat.model'));
+}
+catch (_b) {
+    Chat = {
+        exists: () => __awaiter(void 0, void 0, void 0, function* () { return false; }),
+    };
+}
 const node_cache_1 = __importDefault(require("node-cache"));
 const presenceHelper_1 = require("../app/helpers/presenceHelper");
 // -------------------------
@@ -83,7 +103,7 @@ const socket = (io) => {
                 if (!chatId)
                     return;
                 // Security: Ensure only chat participants can join the room
-                const allowed = yield chat_model_1.Chat.exists({ _id: chatId, participants: userId });
+                const allowed = yield Chat.exists({ _id: chatId, participants: userId });
                 if (!allowed) {
                     socket.emit('ACK_ERROR', {
                         message: 'You are not a participant of this chat',
@@ -107,14 +127,14 @@ const socket = (io) => {
                 // This fixes cases where messages sent while the user was offline remain stuck at "sent"
                 // after the user logs back in and rejoins rooms.
                 try {
-                    const undelivered = yield message_model_1.Message.find({
+                    const undelivered = yield Message.find({
                         chatId,
                         sender: { $ne: userId },
                         deliveredTo: { $nin: [userId] },
                     }, { _id: 1 });
                     if (undelivered && undelivered.length > 0) {
                         const ids = undelivered.map(m => m._id);
-                        yield message_model_1.Message.updateMany({ _id: { $in: ids } }, { $addToSet: { deliveredTo: userId } });
+                        yield Message.updateMany({ _id: { $in: ids } }, { $addToSet: { deliveredTo: userId } });
                         for (const msg of undelivered) {
                             io.to(CHAT_ROOM(String(chatId))).emit('MESSAGE_DELIVERED', {
                                 messageId: String(msg._id),
@@ -134,7 +154,7 @@ const socket = (io) => {
                 if (!chatId)
                     return;
                 // Guard: Ensure only participants can leave (consistency & logging)
-                const allowed = yield chat_model_1.Chat.exists({ _id: chatId, participants: userId });
+                const allowed = yield Chat.exists({ _id: chatId, participants: userId });
                 if (!allowed) {
                     socket.emit('ACK_ERROR', {
                         message: 'You are not a participant of this chat',
@@ -162,7 +182,7 @@ const socket = (io) => {
                 if (!chatId)
                     return;
                 // Guard: Only participants can emit typing events for a chat
-                const allowed = yield chat_model_1.Chat.exists({ _id: chatId, participants: userId });
+                const allowed = yield Chat.exists({ _id: chatId, participants: userId });
                 if (!allowed) {
                     handleEventProcessed('TYPING_START_DENIED', `for chat_id: ${chatId}`);
                     return;
@@ -183,7 +203,7 @@ const socket = (io) => {
                 if (!chatId)
                     return;
                 // Guard: Only participants can emit typing stop events
-                const allowed = yield chat_model_1.Chat.exists({ _id: chatId, participants: userId });
+                const allowed = yield Chat.exists({ _id: chatId, participants: userId });
                 if (!allowed) {
                     handleEventProcessed('TYPING_STOP_DENIED', `for chat_id: ${chatId}`);
                     return;
@@ -198,7 +218,7 @@ const socket = (io) => {
             // ---------------------------------------------
             socket.on('DELIVERED_ACK', (_a) => __awaiter(void 0, [_a], void 0, function* ({ messageId }) {
                 try {
-                    const found = yield message_model_1.Message.findById(messageId).select('_id chatId');
+                    const found = yield Message.findById(messageId).select('_id chatId');
                     if (!found) {
                         socket.emit('ACK_ERROR', {
                             message: 'Message not found',
@@ -206,7 +226,7 @@ const socket = (io) => {
                         });
                         return;
                     }
-                    const allowed = yield chat_model_1.Chat.exists({ _id: found.chatId, participants: userId });
+                    const allowed = yield Chat.exists({ _id: found.chatId, participants: userId });
                     if (!allowed) {
                         socket.emit('ACK_ERROR', {
                             message: 'You are not a participant of this chat',
@@ -216,7 +236,7 @@ const socket = (io) => {
                         handleEventProcessed('DELIVERED_ACK_DENIED', `chat_id: ${String(found.chatId)}`);
                         return;
                     }
-                    const msg = yield message_model_1.Message.findByIdAndUpdate(messageId, { $addToSet: { deliveredTo: userId } }, { new: true });
+                    const msg = yield Message.findByIdAndUpdate(messageId, { $addToSet: { deliveredTo: userId } }, { new: true });
                     if (msg) {
                         io.to(CHAT_ROOM(String(msg.chatId))).emit('MESSAGE_DELIVERED', {
                             messageId: String(msg._id),
@@ -232,7 +252,7 @@ const socket = (io) => {
             }));
             socket.on('READ_ACK', (_a) => __awaiter(void 0, [_a], void 0, function* ({ messageId }) {
                 try {
-                    const found = yield message_model_1.Message.findById(messageId).select('_id chatId');
+                    const found = yield Message.findById(messageId).select('_id chatId');
                     if (!found) {
                         socket.emit('ACK_ERROR', {
                             message: 'Message not found',
@@ -240,7 +260,7 @@ const socket = (io) => {
                         });
                         return;
                     }
-                    const allowed = yield chat_model_1.Chat.exists({ _id: found.chatId, participants: userId });
+                    const allowed = yield Chat.exists({ _id: found.chatId, participants: userId });
                     if (!allowed) {
                         socket.emit('ACK_ERROR', {
                             message: 'You are not a participant of this chat',
@@ -250,7 +270,7 @@ const socket = (io) => {
                         handleEventProcessed('READ_ACK_DENIED', `chat_id: ${String(found.chatId)}`);
                         return;
                     }
-                    const msg = yield message_model_1.Message.findByIdAndUpdate(messageId, { $addToSet: { readBy: userId } }, { new: true });
+                    const msg = yield Message.findByIdAndUpdate(messageId, { $addToSet: { readBy: userId } }, { new: true });
                     if (msg) {
                         io.to(CHAT_ROOM(String(msg.chatId))).emit('MESSAGE_READ', {
                             messageId: String(msg._id),

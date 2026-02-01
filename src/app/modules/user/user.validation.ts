@@ -18,7 +18,7 @@ const createUserZodSchema = z.object({
         .string()
         .regex(phoneRegex, 'Phone must be 7-15 digits, optional +')
         .optional(),
-      role: z.enum([USER_ROLES.POSTER, USER_ROLES.TASKER]).optional(),
+      role: z.enum([USER_ROLES.USER]).optional(),
       password: z.string().optional(),
       profilePicture: z.string().optional(),
       googleId: z.string().optional(),
@@ -38,16 +38,7 @@ const createUserZodSchema = z.object({
     }),
 });
 
-// const updateUserZodSchema = z.object({
-//   name: z.string().optional(),
-//   email: z.string().optional(),
-//   gender: z.enum(['male', 'female']).optional(),
-//   dateOfBirth: z.string().optional(),
-//   location: z.string().optional(),
-//   phone: z.string().optional(),
-//   password: z.string().optional(),
-//   image: z.string().optional(),
-// });
+
 const updateUserZodSchema = z.object({
   body: z.object({
     name: z.string().optional(),
@@ -55,6 +46,8 @@ const updateUserZodSchema = z.object({
     gender: z.enum(['male', 'female']).optional(),
     dateOfBirth: z.string().optional(),
     location: z.string().optional(),
+    specialty: z.string().optional(),
+    hospital: z.string().optional(),
     phone: z.string().regex(phoneRegex, 'Phone must be 7-15 digits, optional +').optional(),
     password: z
       .string()

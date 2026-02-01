@@ -53,7 +53,7 @@ node scripts/postman/generate-all.js
 
 **Output:**
 - `postman-collections/complete-api-collection.json`
-- `postman-collections/environment.json`
+  (Variables embedded inside collection; no separate env required)
 
 **Features:**
 - Auto-discovers routes
@@ -61,6 +61,7 @@ node scripts/postman/generate-all.js
 - Generates folder structure
 - Creates environment variables
 - Bearer token authentication
+ - Optional external environment file via `--env-file`
 
 ---
 

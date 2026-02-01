@@ -19,7 +19,7 @@ const createUserZodSchema = zod_1.z.object({
             .string()
             .regex(phoneRegex, 'Phone must be 7-15 digits, optional +')
             .optional(),
-        role: zod_1.z.enum([user_1.USER_ROLES.POSTER, user_1.USER_ROLES.TASKER]).optional(),
+        role: zod_1.z.enum([user_1.USER_ROLES.USER]).optional(),
         password: zod_1.z.string().optional(),
         profilePicture: zod_1.z.string().optional(),
         googleId: zod_1.z.string().optional(),
@@ -39,16 +39,6 @@ const createUserZodSchema = zod_1.z.object({
         }
     }),
 });
-// const updateUserZodSchema = z.object({
-//   name: z.string().optional(),
-//   email: z.string().optional(),
-//   gender: z.enum(['male', 'female']).optional(),
-//   dateOfBirth: z.string().optional(),
-//   location: z.string().optional(),
-//   phone: z.string().optional(),
-//   password: z.string().optional(),
-//   image: z.string().optional(),
-// });
 const updateUserZodSchema = zod_1.z.object({
     body: zod_1.z.object({
         name: zod_1.z.string().optional(),
@@ -56,6 +46,8 @@ const updateUserZodSchema = zod_1.z.object({
         gender: zod_1.z.enum(['male', 'female']).optional(),
         dateOfBirth: zod_1.z.string().optional(),
         location: zod_1.z.string().optional(),
+        specialty: zod_1.z.string().optional(),
+        hospital: zod_1.z.string().optional(),
         phone: zod_1.z.string().regex(phoneRegex, 'Phone must be 7-15 digits, optional +').optional(),
         password: zod_1.z
             .string()

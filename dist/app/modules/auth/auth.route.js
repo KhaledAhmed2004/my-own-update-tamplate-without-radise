@@ -12,30 +12,30 @@ const auth_controller_1 = require("./auth.controller");
 const auth_validation_1 = require("./auth.validation");
 const passport_1 = __importDefault(require("passport"));
 const router = express_1.default.Router();
-// User Login
+// User login
 router.post('/login', (0, validateRequest_1.default)(auth_validation_1.AuthValidation.createLoginZodSchema), auth_controller_1.AuthController.loginUser);
-// Google OAuth Login
+// Google OAuth login — redirect with profile/email scopes
 router.get('/google', (req, res, next) => {
     passport_1.default.authenticate('google', {
         scope: ['profile', 'email'],
     })(req, res, next);
 });
-// Google OAuth Callback
+// Google OAuth callback — handle sign-in after Google returns
 router.get('/google/callback', (req, res, next) => {
     next();
 }, passport_1.default.authenticate('google', { session: false }), auth_controller_1.AuthController.googleCallback);
-// User Logout
-router.post('/logout', (0, auth_1.default)(user_1.USER_ROLES.SUPER_ADMIN, user_1.USER_ROLES.TASKER, user_1.USER_ROLES.POSTER), auth_controller_1.AuthController.logoutUser);
-// Forget Password Request
+// User logout — invalidate active sessions/tokens
+router.post('/logout', (0, auth_1.default)(user_1.USER_ROLES.SUPER_ADMIN, user_1.USER_ROLES.USER), auth_controller_1.AuthController.logoutUser);
+// Password reset request — send reset link via email
 router.post('/forget-password', (0, validateRequest_1.default)(auth_validation_1.AuthValidation.createForgetPasswordZodSchema), auth_controller_1.AuthController.forgetPassword);
-// Email Verification
+// Email verification — verify via code/token
 router.post('/verify-email', (0, validateRequest_1.default)(auth_validation_1.AuthValidation.createVerifyEmailZodSchema), auth_controller_1.AuthController.verifyEmail);
-// Reset Password
+// Password reset — set new password with valid token
 router.post('/reset-password', (0, validateRequest_1.default)(auth_validation_1.AuthValidation.createResetPasswordZodSchema), auth_controller_1.AuthController.resetPassword);
-// Change Password
-router.post('/change-password', (0, auth_1.default)(user_1.USER_ROLES.SUPER_ADMIN, user_1.USER_ROLES.TASKER, user_1.USER_ROLES.POSTER), (0, validateRequest_1.default)(auth_validation_1.AuthValidation.createChangePasswordZodSchema), auth_controller_1.AuthController.changePassword);
-// Resend Verification Email
+// Change password — authenticated user provides old/new password
+router.post('/change-password', (0, auth_1.default)(user_1.USER_ROLES.SUPER_ADMIN, user_1.USER_ROLES.USER), (0, validateRequest_1.default)(auth_validation_1.AuthValidation.createChangePasswordZodSchema), auth_controller_1.AuthController.changePassword);
+// Resend verification email
 router.post('/resend-verify-email', auth_controller_1.AuthController.resendVerifyEmail);
-// Refresh Token
+// Refresh token — renew access token
 router.post('/refresh-token', (0, validateRequest_1.default)(auth_validation_1.AuthValidation.createRefreshTokenZodSchema), auth_controller_1.AuthController.refreshToken);
 exports.AuthRoutes = router;

@@ -231,4 +231,7 @@ const StripeConnectService = {
   handleAccountUpdated,
 };
 
+// Provide named export for controller imports
+export { deleteStripeAccountService };
+
 export default StripeConnectService;

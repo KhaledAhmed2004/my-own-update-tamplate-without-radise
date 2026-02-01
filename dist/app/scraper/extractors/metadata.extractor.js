@@ -37,8 +37,8 @@ exports.MetadataExtractor = {
             if (keywordsStr) {
                 metadata.keywords = keywordsStr
                     .split(',')
-                    .map(k => k.trim())
-                    .filter(k => k.length > 0);
+                    .map((k) => k.trim())
+                    .filter((k) => k.length > 0);
             }
             // Open Graph tags
             metadata.ogTitle = (_e = $('meta[property="og:title"]').attr('content')) === null || _e === void 0 ? void 0 : _e.trim();

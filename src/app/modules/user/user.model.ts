@@ -16,7 +16,7 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: Object.values(USER_ROLES),
-      default: USER_ROLES.POSTER,
+      default: USER_ROLES.USER,
     },
     email: {
       type: String,
@@ -49,6 +49,14 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
     },
+    specialty: {
+      type: String,
+      trim: true,
+    },
+    hospital: {
+      type: String,
+      trim: true,
+    },
     profilePicture: {
       type: String,
       default: 'https://i.ibb.co/z5YHLV9/profile.png',
@@ -66,24 +74,12 @@ const userSchema = new Schema<IUser>(
       type: [String],
       default: [],
     },
-    averageRating: {
-      type: Number,
-      default: 0,
-    },
-    ratingsCount: {
-      type: Number,
-      default: 0,
-    },
     about: {
       type: String,
     },
     googleId: {
       type: String,
       sparse: true, // allows multiple null values but unique non-null values
-    },
-    achievements: {
-      type: [String],
-      default: [],
     },
     authentication: {
       type: {

@@ -1,6 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
 import { JwtPayload } from 'jsonwebtoken';
-import { USER_ROLES, USER_STATUS } from '../../../enums/user';
+import { USER_STATUS, USER_ROLES } from '../../../enums/user';
+import { Types } from 'mongoose';
+import { PreferenceCardModel } from '../preference-card/preference-card.model';
+import { Subscription as SubscriptionModel } from '../subscription/subscription.model';
 import ApiError from '../../../errors/ApiError';
 import { emailHelper } from '../../../helpers/emailHelper';
 import { emailTemplate } from '../../../shared/emailTemplate';
@@ -8,7 +11,6 @@ import unlinkFile from '../../../shared/unlinkFile';
 import generateOTP from '../../../util/generateOTP';
 import { User } from './user.model';
 import QueryBuilder from '../../builder/QueryBuilder';
-import AggregationBuilder from '../../builder/AggregationBuilder';
 import { IUser } from './user.interface';
 
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
@@ -36,14 +38,14 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   };
   await User.findOneAndUpdate(
     { _id: createUser._id },
-    { $set: { authentication } }
+    { $set: { authentication } },
   );
 
   return createUser;
 };
 
 const getUserProfileFromDB = async (
-  user: JwtPayload
+  user: JwtPayload,
 ): Promise<Partial<IUser>> => {
   const { id } = user;
   const isExistUser = await User.isExistUserById(id);
@@ -56,7 +58,7 @@ const getUserProfileFromDB = async (
 
 const updateProfileToDB = async (
   user: JwtPayload,
-  payload: Partial<IUser>
+  payload: Partial<IUser>,
 ): Promise<Partial<IUser | null>> => {
   const { id } = user;
   const isExistUser = await User.isExistUserById(id);
@@ -98,6 +100,71 @@ const getAllUsers = async (query: Record<string, unknown>) => {
   };
 };
 
+const getAllUserRoles = async (query: Record<string, unknown>) => {
+  const qb = new QueryBuilder(User.find({ role: USER_ROLES.USER }), query)
+    .filter()
+    .sort()
+    .paginate();
+
+  // Select core fields needed for listing
+  const docs = (await qb.modelQuery
+    .select('_id name email profilePicture status specialty hospital role')
+    .lean()) as Array<any>;
+
+  const paginationInfo = await qb.getPaginationInfo();
+
+  // Build id arrays for lookups
+  const idStrings = docs.map(d => (d._id ? d._id.toString() : null)).filter(Boolean) as string[];
+
+  // Cards count per user (PreferenceCard.createdBy stores string userId)
+  const cardCountsAgg = await PreferenceCardModel.aggregate([
+    { $match: { createdBy: { $in: idStrings } } },
+    { $group: { _id: '$createdBy', count: { $sum: 1 } } },
+  ]);
+  const cardCountsMap = new Map<string, number>();
+  for (const item of cardCountsAgg) {
+    cardCountsMap.set(item._id, item.count);
+  }
+
+  // Subscription per user
+  const objectIds = idStrings.map(id => new Types.ObjectId(id));
+  const subs = await SubscriptionModel.find({ userId: { $in: objectIds } })
+    .select('userId plan status currentPeriodEnd')
+    .lean();
+  const subsMap = new Map<string, any>();
+  for (const s of subs) {
+    subsMap.set((s.userId as Types.ObjectId).toString(), {
+      plan: s.plan,
+      status: s.status,
+      currentPeriodEnd: s.currentPeriodEnd ?? null,
+    });
+  }
+
+  // Compose final response objects
+  const data = docs.map(d => {
+    const id = d._id?.toString() as string | undefined;
+    return {
+      _id: d._id,
+      name: d.name,
+      email: d.email,
+      profilePicture: d.profilePicture,
+      role: d.role,
+      specialty: d.specialty ?? null,
+      hospital: d.hospital ?? null,
+      status: d.status,
+      cards: id ? cardCountsMap.get(id) ?? 0 : 0,
+      subscription: id ? subsMap.get(id) ?? null : null,
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
+    };
+  });
+
+  return {
+    pagination: paginationInfo,
+    data,
+  };
+};
+
 const updateUserStatus = async (id: string, status: USER_STATUS) => {
   const user = await User.isExistUserById(id);
   if (!user) {
@@ -107,7 +174,7 @@ const updateUserStatus = async (id: string, status: USER_STATUS) => {
   const updatedUser = await User.findByIdAndUpdate(
     id,
     { status },
-    { new: true }
+    { new: true },
   );
 
   return updatedUser;
@@ -135,6 +202,7 @@ export const UserService = {
   getUserProfileFromDB,
   updateProfileToDB,
   getAllUsers,
+  getAllUserRoles,
   updateUserStatus,
   getUserById,
   getUserDetailsById,

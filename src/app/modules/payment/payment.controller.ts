@@ -112,10 +112,11 @@ export const getPaymentsController = catchAsync(
     if (dateFrom) filters.dateFrom = new Date(dateFrom as string);
     if (dateTo) filters.dateTo = new Date(dateTo as string);
 
-    const result = await getPayments(filters, {
-      page: Number(page) || 1,
-      limit: Number(limit) || 10,
-    });
+    const result = await getPayments(
+      filters,
+      Number(page) || 1,
+      Number(limit) || 10
+    );
 
     sendResponse(res, {
       success: true,

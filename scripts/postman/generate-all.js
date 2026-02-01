@@ -10,13 +10,14 @@ const path = require('path');
  * - Collection variables with auto-token injection
  * - Pre-request and test scripts
  * - File upload support
- * - Environment files generation
+ * - Environment variables embedded in collection
+ * - Optional environment file generation (explicit flag)
  * - Automatic backups
  *
  * Usage:
  *   node scripts/postman/generate-all.js              # All modules
  *   node scripts/postman/generate-all.js auth         # Single module
- *   node scripts/postman/generate-all.js --env        # Generate environments
+ *   node scripts/postman/generate-all.js --env-file   # (Optional) Generate external environment file
  *   node scripts/postman/generate-all.js --force      # Force fresh generation
  */
 
@@ -62,9 +63,15 @@ class EnhancedPostmanGenerator {
         return;
       }
 
+      // Deprecated flag: --env
       if (options.env) {
+        console.log('ℹ️  The --env flag is deprecated. Variables are now embedded inside the collection.');
+        console.log('ℹ️  If you still need a separate environment file, use --env-file.\n');
+      }
+
+      // Optional: generate external environment file alongside collection
+      if (options.envFile) {
         await this.generateEnvironmentFiles();
-        return;
       }
 
       // Generate collection
@@ -86,7 +93,8 @@ class EnhancedPostmanGenerator {
     const options = {
       module: null,
       force: false,
-      env: false,
+      env: false, // deprecated
+      envFile: false, // new optional external environment file
       help: false,
       noBackup: false,
     };
@@ -97,7 +105,9 @@ class EnhancedPostmanGenerator {
       } else if (arg === '--force' || arg === '-f') {
         options.force = true;
       } else if (arg === '--env') {
-        options.env = true;
+        options.env = true; // deprecated behavior
+      } else if (arg === '--env-file') {
+        options.envFile = true;
       } else if (arg === '--no-backup') {
         options.noBackup = true;
       } else if (!arg.startsWith('--')) {
@@ -120,14 +130,14 @@ Usage:
 
 Options:
   --help, -h          Show this help message
-  --env               Generate environment files
+  --env-file          (Optional) Generate external environment file
   --force, -f         Force fresh generation (ignore existing)
   --no-backup         Skip backup creation
 
 Examples:
   node scripts/postman/generate-all.js              Generate all modules
   node scripts/postman/generate-all.js auth         Generate auth module
-  node scripts/postman/generate-all.js --env        Generate environments
+  node scripts/postman/generate-all.js --env-file   Generate environment file
   node scripts/postman/generate-all.js --force      Force fresh collection
 
 Features:
@@ -137,6 +147,7 @@ Features:
   ✅ File upload support
   ✅ Collection variables
   ✅ Automatic backups
+  🆕 Variables embedded in collection by default (no separate env required)
 
 Available Modules:
   ${Object.keys(this.moduleConfig).join(', ')}

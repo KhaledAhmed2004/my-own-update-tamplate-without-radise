@@ -1,8 +1,8 @@
 /**
  * Threshold Validator
  *
- * Purpose: Runtime-এ validate করে যে threshold values logical কিনা
- * Future mismatch prevent করে
+ * Purpose: Validate at runtime that threshold values are logical
+ * Prevents future mismatches
  */
 
 interface ThresholdValidationResult {
@@ -26,7 +26,7 @@ export function validatePerformanceThresholds(
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // ✅ Check 1: Memory thresholds ascending order-এ আছে কিনা
+  // ✅ Check 1: Memory thresholds are in ascending order
   if (thresholds.memory.healthy >= thresholds.memory.moderate) {
     errors.push(
       `Memory healthy (${thresholds.memory.healthy}) must be < moderate (${thresholds.memory.moderate})`
@@ -47,7 +47,7 @@ export function validatePerformanceThresholds(
     );
   }
 
-  // ✅ Check 3: CPU thresholds ascending order-এ আছে কিনা
+  // ✅ Check 3: CPU thresholds are in ascending order
   if (thresholds.cpu.efficient >= thresholds.cpu.moderate) {
     errors.push(
       `CPU efficient (${thresholds.cpu.efficient}%) must be < moderate (${thresholds.cpu.moderate}%)`
@@ -60,7 +60,7 @@ export function validatePerformanceThresholds(
     );
   }
 
-  // ✅ Check 4: CPU threshold thread pool-কে support করছে কিনা
+  // ✅ Check 4: CPU threshold supports thread pool behavior
   if (thresholds.cpu.intensive < 100) {
     warnings.push(
       `⚠️  CPU intensive threshold (${thresholds.cpu.intensive}%) is too low! ` +
@@ -68,7 +68,7 @@ export function validatePerformanceThresholds(
     );
   }
 
-  // ✅ Check 5: Ranges যথেষ্ট বড় কিনা
+  // ✅ Check 5: Ranges are sufficiently large
   const memoryRange = thresholds.memory.moderate - thresholds.memory.healthy;
   if (memoryRange < 20) {
     warnings.push(

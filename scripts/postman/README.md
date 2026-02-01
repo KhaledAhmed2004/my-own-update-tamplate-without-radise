@@ -19,14 +19,16 @@ This creates `postman-collections/complete-api-collection.json` with:
 - ✅ Smart merge (preserves your saved data)
 - ✅ Collection variables
 
-### Generate Environment File
+### Optional: Generate External Environment File
 
 ```bash
-node scripts/postman/generate-all.js --env
+node scripts/postman/generate-all.js --env-file
 ```
 
 Creates:
 - `postman-collections/environment.json` (Development environment for localhost)
+
+Note: Collection already embeds variables (BASE_URL, tokens, IDs). External env file is optional.
 
 ### Generate Single Module
 
@@ -753,18 +755,18 @@ node scripts/postman/generate-all.js
 
 ✅ Collection imported!
 
-#### 3. Import Environment (Optional but Recommended)
+#### 3. Import Environment (Optional)
 
 ```bash
-# Generate environment first
-node scripts/postman/generate-all.js --env
+# Generate environment first (optional)
+node scripts/postman/generate-all.js --env-file
 ```
 
 1. In Postman, click **Environments** (left sidebar)
 2. Click **Import**
 3. Select: `postman-collections/environment.json`
 4. Click **Import**
-5. **Select "Development"** from environment dropdown (top-right)
+5. **Select "Development"** from environment dropdown (top-right) (only if you imported env)
 
 **For Production:**
 - Duplicate "Development" environment in Postman
@@ -1161,11 +1163,16 @@ This ignores existing collection and creates fresh one.
 
 ### Example 1: Complete Workflow (বাংলা)
 
-**১. Collection এবং Environment তৈরি করুন:**
+**১. Collection তৈরি করুন (Variables embedded):**
 
 ```bash
 node scripts/postman/generate-all.js
-node scripts/postman/generate-all.js --env
+```
+
+ঐচ্ছিক: যদি আলাদা environment ফাইল দরকার হয়:
+
+```bash
+node scripts/postman/generate-all.js --env-file
 ```
 
 **২. Postman এ import করুন:**

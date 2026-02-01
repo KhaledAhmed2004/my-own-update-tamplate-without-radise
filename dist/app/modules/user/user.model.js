@@ -28,7 +28,7 @@ const userSchema = new mongoose_1.Schema({
     role: {
         type: String,
         enum: Object.values(user_1.USER_ROLES),
-        default: user_1.USER_ROLES.POSTER,
+        default: user_1.USER_ROLES.USER,
     },
     email: {
         type: String,
@@ -61,6 +61,14 @@ const userSchema = new mongoose_1.Schema({
         type: String,
         trim: true,
     },
+    specialty: {
+        type: String,
+        trim: true,
+    },
+    hospital: {
+        type: String,
+        trim: true,
+    },
     profilePicture: {
         type: String,
         default: 'https://i.ibb.co/z5YHLV9/profile.png',
@@ -78,24 +86,12 @@ const userSchema = new mongoose_1.Schema({
         type: [String],
         default: [],
     },
-    averageRating: {
-        type: Number,
-        default: 0,
-    },
-    ratingsCount: {
-        type: Number,
-        default: 0,
-    },
     about: {
         type: String,
     },
     googleId: {
         type: String,
         sparse: true, // allows multiple null values but unique non-null values
-    },
-    achievements: {
-        type: [String],
-        default: [],
     },
     authentication: {
         type: {

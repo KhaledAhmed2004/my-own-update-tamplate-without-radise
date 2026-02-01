@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Complete API Collection",
-    "description": "All API modules with smart authentication and auto-saved variables",
+    "name": "Medical API (Production)",
+    "description": "This Postman collection covers all REST endpoints for the Medical API, including authentication, patient records, appointments, billing, and admin routes.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -9,7 +9,7 @@
       "name": "Auth Module",
       "item": [
         {
-          "name": "User Login",
+          "name": "ইউজার লগইন — ক্রেডেনশিয়াল দিয়ে অ্যাক্সেস টোকেন নেয়",
           "request": {
             "method": "POST",
             "header": [
@@ -39,7 +39,8 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: ইউজার লগইন — ক্রেডেনশিয়াল দিয়ে অ্যাক্সেস টোকেন নেয়\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/login\nNotes: Update with request body, params, and response details."
           },
           "response": [],
           "event": [
@@ -73,7 +74,7 @@
           ]
         },
         {
-          "name": "Google OAuth Login",
+          "name": "Google OAuth লগইন — গুগল প্রোফাইল/ইমেইল স্কোপে রিডাইরেক্ট",
           "request": {
             "method": "GET",
             "header": [
@@ -94,12 +95,13 @@
                 "auth",
                 "google"
               ]
-            }
+            },
+            "description": "Purpose: Google OAuth লগইন — গুগল প্রোফাইল/ইমেইল স্কোপে রিডাইরেক্ট\nMethod: GET\nURL: {{BASE_URL}}/api/v1/auth/google\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Google OAuth Callback",
+          "name": "Google OAuth কলব্যাক — গুগল রিটার্নের পর ইউজার সাইনইন হ্যান্ডেল",
           "request": {
             "method": "GET",
             "header": [
@@ -121,12 +123,13 @@
                 "google",
                 "callback"
               ]
-            }
+            },
+            "description": "Purpose: Google OAuth কলব্যাক — গুগল রিটার্নের পর ইউজার সাইনইন হ্যান্ডেল\nMethod: GET\nURL: {{BASE_URL}}/api/v1/auth/google/callback\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "User Logout",
+          "name": "ইউজার লগআউট — অ্যাক্টিভ সেশন/টোকেন ইনভ্যালিডেট",
           "request": {
             "method": "POST",
             "header": [
@@ -156,12 +159,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: ইউজার লগআউট — অ্যাক্টিভ সেশন/টোকেন ইনভ্যালিডেট\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/logout\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Forget Password Request",
+          "name": "পাসওয়ার্ড রিসেট রিকোয়েস্ট — ইমেইলে রিসেট লিংক পাঠায়",
           "request": {
             "method": "POST",
             "header": [
@@ -191,12 +195,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: পাসওয়ার্ড রিসেট রিকোয়েস্ট — ইমেইলে রিসেট লিংক পাঠায়\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/forget-password\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Email Verification",
+          "name": "ইমেইল ভেরিফিকেশন — কোড/টোকেন দিয়ে ইমেইল ভেরিফাই",
           "request": {
             "method": "POST",
             "header": [
@@ -226,12 +231,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: ইমেইল ভেরিফিকেশন — কোড/টোকেন দিয়ে ইমেইল ভেরিফাই\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/verify-email\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Reset Password",
+          "name": "পাসওয়ার্ড রিসেট — ভ্যালিড টোকেন দিয়ে নতুন পাসওয়ার্ড সেট",
           "request": {
             "method": "POST",
             "header": [
@@ -261,12 +267,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: পাসওয়ার্ড রিসেট — ভ্যালিড টোকেন দিয়ে নতুন পাসওয়ার্ড সেট\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/reset-password\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Change Password",
+          "name": "পাসওয়ার্ড পরিবর্তন — লগইন থাকা ইউজার পুরোনো/নতুন পাসওয়ার্ড দেয়",
           "request": {
             "method": "POST",
             "header": [
@@ -296,12 +303,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: পাসওয়ার্ড পরিবর্তন — লগইন থাকা ইউজার পুরোনো/নতুন পাসওয়ার্ড দেয়\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/change-password\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Resend Verification Email",
+          "name": "ভেরিফিকেশন ইমেইল আবার পাঠায়",
           "request": {
             "method": "POST",
             "header": [
@@ -331,12 +339,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: ভেরিফিকেশন ইমেইল আবার পাঠায়\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/resend-verify-email\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Refresh Token",
+          "name": "রিফ্রেশ টোকেন — অ্যাক্সেস টোকেন নবায়ন",
           "request": {
             "method": "POST",
             "header": [
@@ -366,7 +375,8 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: রিফ্রেশ টোকেন — অ্যাক্সেস টোকেন নবায়ন\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/refresh-token\nNotes: Update with request body, params, and response details."
           },
           "response": []
         }
@@ -377,10 +387,16 @@
       "name": "User Module",
       "item": [
         {
-          "name": "Create a new user",
+          "name": "নতুন ইউজার তৈরি — ভ্যালিডেশন + রেট লিমিট প্রযোজ্য",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
             "url": {
               "raw": "{{BASE_URL}}/api/v1/user/",
               "host": [
@@ -393,14 +409,20 @@
               ]
             },
             "body": {
-              "mode": "formdata",
-              "formdata": []
-            }
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{TEST_NAME}}\",\n  \"email\": \"{{TEST_EMAIL}}\",\n  \"password\": \"{{TEST_PASSWORD}}\",\n  \"role\": \"TASKER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Purpose: নতুন ইউজার তৈরি — ভ্যালিডেশন + রেট লিমিট প্রযোজ্য\nMethod: POST\nURL: {{BASE_URL}}/api/v1/user/\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Get user own profile",
+          "name": "নিজের প্রোফাইল ডিটেইলস আনে",
           "request": {
             "method": "GET",
             "header": [],
@@ -415,12 +437,13 @@
                 "user",
                 "profile"
               ]
-            }
+            },
+            "description": "Purpose: নিজের প্রোফাইল ডিটেইলস আনে\nMethod: GET\nURL: {{BASE_URL}}/api/v1/user/profile\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Update user profile",
+          "name": "নিজের প্রোফাইল আপডেট — ফাইল আপলোড + ভ্যালিডেশন",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -457,12 +480,13 @@
                   "description": "Profile picture"
                 }
               ]
-            }
+            },
+            "description": "Purpose: নিজের প্রোফাইল আপডেট — ফাইল আপলোড + ভ্যালিডেশন\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/user/profile\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Get all users",
+          "name": "সব ইউজার লিস্ট — শুধুমাত্র সুপার অ্যাডমিন",
           "request": {
             "method": "GET",
             "header": [
@@ -482,12 +506,13 @@
                 "v1",
                 "user"
               ]
-            }
+            },
+            "description": "Purpose: সব ইউজার লিস্ট — শুধুমাত্র সুপার অ্যাডমিন\nMethod: GET\nURL: {{BASE_URL}}/api/v1/user/\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Block a user",
+          "name": "ইউজার ব্লক — সুপার অ্যাডমিন",
           "request": {
             "method": "PATCH",
             "header": [
@@ -518,12 +543,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: ইউজার ব্লক — সুপার অ্যাডমিন\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/user/:id/block\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Unblock a user",
+          "name": "ইউজার আনব্লক — সুপার অ্যাডমিন",
           "request": {
             "method": "PATCH",
             "header": [
@@ -554,12 +580,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: ইউজার আনব্লক — সুপার অ্যাডমিন\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/user/:id/unblock\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Get a specific user by ID",
+          "name": "নির্দিষ্ট ইউজারের ডিটেইলস আইডি দিয়ে (সুপার অ্যাডমিন)",
           "request": {
             "method": "GET",
             "header": [
@@ -580,12 +607,13 @@
                 "user",
                 ":id"
               ]
-            }
+            },
+            "description": "Purpose: নির্দিষ্ট ইউজারের ডিটেইলস আইডি দিয়ে (সুপার অ্যাডমিন)\nMethod: GET\nURL: {{BASE_URL}}/api/v1/user/:id\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Public user details (allow guest), apply rate limit",
+          "name": "পাবলিক ইউজার ডিটেইলস (গেস্ট অনুমোদিত) — রেট লিমিট প্রযোজ্য",
           "request": {
             "method": "GET",
             "header": [
@@ -607,7 +635,8 @@
                 ":id",
                 "user"
               ]
-            }
+            },
+            "description": "Purpose: পাবলিক ইউজার ডিটেইলস (গেস্ট অনুমোদিত) — রেট লিমিট প্রযোজ্য\nMethod: GET\nURL: {{BASE_URL}}/api/v1/user/:id/user\nNotes: Update with request body, params, and response details."
           },
           "response": []
         }
@@ -615,213 +644,10 @@
       "description": "User related endpoints"
     },
     {
-      "name": "Chat Module",
-      "item": [
-        {
-          "name": "POST - {otherUserId}",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{BASE_URL}}/api/v1/chats/:otherUserId",
-              "host": [
-                "{{BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "chats",
-                ":otherUserId"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "// Auto-save chat ID",
-                  "const response = pm.response.json();",
-                  "",
-                  "if (response.success && response.data && response.data._id) {",
-                  "  pm.collectionVariables.set(\"chatId\", response.data._id);",
-                  "  console.log(\"✅ Chat ID saved:\", response.data._id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "GET - Get All",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{BASE_URL}}/api/v1/chats/",
-              "host": [
-                "{{BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "chats"
-              ]
-            }
-          },
-          "response": []
-        }
-      ],
-      "description": "Chat related endpoints"
-    },
-    {
-      "name": "Message Module",
-      "item": [
-        {
-          "name": "POST - Get All",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{BASE_URL}}/api/v1/messages/",
-              "host": [
-                "{{BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "messages"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"chatId\": \"{{chatId}}\",\n  \"text\": \"Hello, this is a test message!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "// Auto-save message ID",
-                  "const response = pm.response.json();",
-                  "",
-                  "if (response.success && response.data && response.data._id) {",
-                  "  pm.collectionVariables.set(\"messageId\", response.data._id);",
-                  "  console.log(\"✅ Message ID saved:\", response.data._id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "GET - {id}",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{BASE_URL}}/api/v1/messages/:id",
-              "host": [
-                "{{BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "messages",
-                ":id"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Mark all messages in a chat as read",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{BASE_URL}}/api/v1/messages/chat/:chatId/read",
-              "host": [
-                "{{BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "messages",
-                "chat",
-                ":chatId",
-                "read"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        }
-      ],
-      "description": "Message related endpoints"
-    },
-    {
       "name": "Payment Module",
       "item": [
         {
-          "name": "Note: Raw body parsing is handled at app level for webhook routes",
+          "name": "নোট: ওয়েবহুকের জন্য raw body পার্সিং app লেভেলে সেট করা",
           "request": {
             "method": "POST",
             "header": [
@@ -851,7 +677,8 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: নোট: ওয়েবহুকের জন্য raw body পার্সিং app লেভেলে সেট করা\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/webhook\nNotes: Update with request body, params, and response details."
           },
           "response": [],
           "event": [
@@ -879,7 +706,7 @@
           ]
         },
         {
-          "name": "Stripe Connect account management",
+          "name": "Stripe Connect অ্যাকাউন্ট তৈরি/ম্যানেজ",
           "request": {
             "method": "POST",
             "header": [
@@ -910,7 +737,8 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: Stripe Connect অ্যাকাউন্ট তৈরি/ম্যানেজ\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/stripe/account\nNotes: Update with request body, params, and response details."
           },
           "response": [],
           "event": [
@@ -938,7 +766,7 @@
           ]
         },
         {
-          "name": "GET - Stripe - Onboarding",
+          "name": "Stripe Onboarding লিংক — টাস্কার/অ্যাডমিন দেখবে",
           "request": {
             "method": "GET",
             "header": [
@@ -960,12 +788,13 @@
                 "stripe",
                 "onboarding"
               ]
-            }
+            },
+            "description": "Purpose: Stripe Onboarding লিংক — টাস্কার/অ্যাডমিন দেখবে\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stripe/onboarding\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "GET - Stripe - Onboarding Status",
+          "name": "Stripe Onboarding স্ট্যাটাস চেক — সকল ভূমিকা",
           "request": {
             "method": "GET",
             "header": [
@@ -987,12 +816,13 @@
                 "stripe",
                 "onboarding-status"
               ]
-            }
+            },
+            "description": "Purpose: Stripe Onboarding স্ট্যাটাস চেক — সকল ভূমিকা\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stripe/onboarding-status\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Payment history route for poster, tasker, super admin",
+          "name": "পেমেন্ট হিস্টোরি — পোস্টার/টাস্কার/সুপার অ্যাডমিন",
           "request": {
             "method": "GET",
             "header": [
@@ -1013,12 +843,13 @@
                 "payments",
                 "history"
               ]
-            }
+            },
+            "description": "Purpose: পেমেন্ট হিস্টোরি — পোস্টার/টাস্কার/সুপার অ্যাডমিন\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/history\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Retrieve current intent and client_secret by bidId",
+          "name": "bidId দিয়ে বর্তমান PaymentIntent + client_secret বের করে",
           "request": {
             "method": "GET",
             "header": [
@@ -1041,12 +872,13 @@
                 ":bidId",
                 "current-intent"
               ]
-            }
+            },
+            "description": "Purpose: bidId দিয়ে বর্তমান PaymentIntent + client_secret বের করে\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/by-bid/:bidId/current-intent\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "POST - Refund - {paymentId}",
+          "name": "পেমেন্ট রিফান্ড — পোস্টার/সুপার অ্যাডমিন",
           "request": {
             "method": "POST",
             "header": [
@@ -1077,7 +909,8 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: পেমেন্ট রিফান্ড — পোস্টার/সুপার অ্যাডমিন\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/refund/:paymentId\nNotes: Update with request body, params, and response details."
           },
           "response": [],
           "event": [
@@ -1105,7 +938,7 @@
           ]
         },
         {
-          "name": "Payment information retrieval",
+          "name": "নির্দিষ্ট পেমেন্ট ডিটেইলস — রোলভিত্তিক অ্যাক্সেস",
           "request": {
             "method": "GET",
             "header": [
@@ -1126,12 +959,13 @@
                 "payments",
                 ":paymentId"
               ]
-            }
+            },
+            "description": "Purpose: নির্দিষ্ট পেমেন্ট ডিটেইলস — রোলভিত্তিক অ্যাক্সেস\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/:paymentId\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "GET - Get All",
+          "name": "সব পেমেন্ট লিস্ট — সুপার অ্যাডমিন",
           "request": {
             "method": "GET",
             "header": [
@@ -1151,12 +985,13 @@
                 "v1",
                 "payments"
               ]
-            }
+            },
+            "description": "Purpose: সব পেমেন্ট লিস্ট — সুপার অ্যাডমিন\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "GET - Stats",
+          "name": "পেমেন্ট স্ট্যাটস — সুপার অ্যাডমিন",
           "request": {
             "method": "GET",
             "header": [
@@ -1177,12 +1012,13 @@
                 "payments",
                 "stats"
               ]
-            }
+            },
+            "description": "Purpose: পেমেন্ট স্ট্যাটস — সুপার অ্যাডমিন\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stats\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "DELETE - Account - {accountId}",
+          "name": "Stripe অ্যাকাউন্ট ডিলিট — সুপার অ্যাডমিন",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1204,7 +1040,8 @@
                 "account",
                 ":accountId"
               ]
-            }
+            },
+            "description": "Purpose: Stripe অ্যাকাউন্ট ডিলিট — সুপার অ্যাডমিন\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/payments/account/:accountId\nNotes: Update with request body, params, and response details."
           },
           "response": []
         }
@@ -1212,76 +1049,10 @@
       "description": "Payment related endpoints"
     },
     {
-      "name": "Bookmark Module",
-      "item": [
-        {
-          "name": "Toggle bookmark (add if not exists, remove if exists)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{BASE_URL}}/api/v1/bookmarks/",
-              "host": [
-                "{{BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "bookmarks"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"targetId\": \"{{TARGET_ID}}\",\n  \"targetModel\": \"Task\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get all bookmarks of the current user",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{BASE_URL}}/api/v1/bookmarks/my-bookmarks",
-              "host": [
-                "{{BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "bookmarks",
-                "my-bookmarks"
-              ]
-            }
-          },
-          "response": []
-        }
-      ],
-      "description": "Bookmark related endpoints"
-    },
-    {
       "name": "Notification Module",
       "item": [
         {
-          "name": "Fetch notifications + unread count",
+          "name": "নোটিফিকেশন তালিকা + আনরিড কাউন্ট",
           "request": {
             "method": "GET",
             "header": [
@@ -1301,12 +1072,13 @@
                 "v1",
                 "notifications"
               ]
-            }
+            },
+            "description": "Purpose: নোটিফিকেশন তালিকা + আনরিড কাউন্ট\nMethod: GET\nURL: {{BASE_URL}}/api/v1/notifications/\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Mark a notification as read",
+          "name": "নির্দিষ্ট নোটিফিকেশন read হিসেবে মার্ক",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1337,12 +1109,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: নির্দিষ্ট নোটিফিকেশন read হিসেবে মার্ক\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/:id/read\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Mark all notifications as read",
+          "name": "সব নোটিফিকেশন read হিসেবে মার্ক",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1372,12 +1145,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: সব নোটিফিকেশন read হিসেবে মার্ক\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/read-all\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Fetch admin notifications + unread count",
+          "name": "অ্যাডমিন নোটিফিকেশন তালিকা + আনরিড কাউন্ট",
           "request": {
             "method": "GET",
             "header": [
@@ -1398,12 +1172,13 @@
                 "notifications",
                 "admin"
               ]
-            }
+            },
+            "description": "Purpose: অ্যাডমিন নোটিফিকেশন তালিকা + আনরিড কাউন্ট\nMethod: GET\nURL: {{BASE_URL}}/api/v1/notifications/admin\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Mark a single admin notification as read",
+          "name": "নির্দিষ্ট অ্যাডমিন নোটিফিকেশন read হিসেবে মার্ক",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1435,12 +1210,13 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: নির্দিষ্ট অ্যাডমিন নোটিফিকেশন read হিসেবে মার্ক\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/admin/:id/read\nNotes: Update with request body, params, and response details."
           },
           "response": []
         },
         {
-          "name": "Mark all admin notifications as read",
+          "name": "সব অ্যাডমিন নোটিফিকেশন read হিসেবে মার্ক",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1471,7 +1247,8 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Purpose: সব অ্যাডমিন নোটিফিকেশন read হিসেবে মার্ক\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/admin/read-all\nNotes: Update with request body, params, and response details."
           },
           "response": []
         }

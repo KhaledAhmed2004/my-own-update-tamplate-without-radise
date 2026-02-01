@@ -1,12 +1,14 @@
 import express from 'express';
 import { AuthRoutes } from '../app/modules/auth/auth.route';
 import { UserRoutes } from '../app/modules/user/user.route';
-import { ChatRoutes } from '../app/modules/chat/chat.route';
-import { MessageRoutes } from '../app/modules/message/message.route';
-import { PaymentRoutes } from '../app/modules/payment/payment.routes';
-import { BookmarkRoutes } from '../app/modules/bookmark/bookmark.route';
 import { NotificationRoutes } from '../app/modules/notification/notification.routes';
-import { ScrapeRoutes } from '../app/modules/scrape/scrape.route';
+import { SubscriptionRoutes } from '../app/modules/subscription/subscription.route';
+import { EventRoutes } from '../app/modules/event/event.route';
+import { PreferenceCardRoutes } from '../app/modules/preference-card/preference-card.route';
+import { AdminRoutes } from '../app/modules/admin/admin.route';
+import { DoctorRoutes } from '../app/modules/doctor/doctor.route';
+import { SuppliesRoutes } from '../app/modules/supplies/supplies.route';
+import { SuturesRoutes } from '../app/modules/sutures/sutures.route';
 
 const router = express.Router();
 
@@ -20,28 +22,36 @@ const apiRoutes = [
     route: AuthRoutes,
   },
   {
-    path: '/chats',
-    route: ChatRoutes,
-  },
-  {
-    path: '/messages',
-    route: MessageRoutes,
-  },
-  {
-    path: '/payments',
-    route: PaymentRoutes,
-  },
-  {
-    path: '/bookmarks',
-    route: BookmarkRoutes,
-  },
-  {
     path: '/notifications',
     route: NotificationRoutes,
   },
   {
-    path: '/scrape',
-    route: ScrapeRoutes,
+    path: '/subscription',
+    route: SubscriptionRoutes,
+  },
+  {
+    path: '/events',
+    route: EventRoutes,
+  },
+  {
+    path: '/preference-card',
+    route: PreferenceCardRoutes,
+  },
+  {
+    path: '/dashboard',
+    route: AdminRoutes,
+  },
+  {
+    path: '/doctors',
+    route: DoctorRoutes,
+  },
+  {
+    path: '/supplies',
+    route: SuppliesRoutes,
+  },
+  {
+    path: '/sutures',
+    route: SuturesRoutes,
   },
 ];
 

@@ -1,0 +1,1725 @@
+{
+  "info": {
+    "name": "Medical API (Organized)",
+    "description": "Organized Postman collection grouped by modules with clear request docs. Base prefix: /api/v1.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{accessToken}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://localhost:5000", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth Module",
+      "description": "Authentication endpoints including login, OAuth, logout, and token flows.",
+      "item": [
+        {
+          "name": "User login — obtains access token using credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/login",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "description": "Login a user and issue tokens.\n\nAuthentication: Public (no token required).\nRequest Body:\n- email (string, required)\n- password (string, required)\n\nSuccess 200: Returns accessToken, refreshToken, and user profile.\nErrors: 400 invalid credentials, 429 too many attempts."
+          },
+          "response": [],
+          "description": "Purpose: User login — obtains access token using credentials\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/login\nNotes: Provide email and password to receive access/refresh tokens."
+        },
+        {
+          "name": "Google OAuth login — redirect with profile/email scopes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/google",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "google"
+              ]
+            },
+            "description": "Start Google OAuth login.\n\nAuthentication: Public.\nBehavior: Redirects to Google consent screen with email/profile scopes.\nOn success: Google will call the callback endpoint to finalize login."
+          },
+          "response": [],
+          "description": "Purpose: Google OAuth login — redirect to Google\nMethod: GET\nURL: {{BASE_URL}}/api/v1/auth/google\nNotes: Starts OAuth flow; no auth needed."
+        },
+        {
+          "name": "Google OAuth callback — handle sign-in after Google returns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/google/callback",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "google",
+                "callback"
+              ]
+            },
+            "description": "Handle Google OAuth callback and finalize sign‑in.\n\nAuthentication: Public; invoked by Google.\nBehavior: Exchanges Google code for tokens and creates/returns user session.\nSuccess 200: Returns accessToken, refreshToken, and user."
+          },
+          "response": [],
+          "description": "Purpose: Google OAuth callback — completes OAuth\nMethod: GET\nURL: {{BASE_URL}}/api/v1/auth/google/callback\nNotes: Returns tokens/user; called by Google after consent."
+        },
+        {
+          "name": "User logout — invalidate active sessions/tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/logout",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"<refresh-token>\"\n}"
+            },
+            "description": "Logout current user and invalidate tokens.\n\nAuthentication: Bearer token required.\nBehavior: Revokes active session (access/refresh tokens).\nSuccess 200: Confirmation message."
+          },
+          "response": [],
+          "description": "Purpose: User logout — invalidate tokens\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/logout\nNotes: Requires auth; clears session."
+        },
+        {
+          "name": "Password reset request — send reset link via email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/forget-password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forget-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "description": "Request a password reset link via email.\n\nAuthentication: Public.\nRequest Body: email (string, required).\nSuccess 200: Reset email sent if account exists.\nNotes: Response is generic to avoid email enumeration."
+          },
+          "response": [],
+          "description": "Purpose: Password reset request — sends link\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/forget-password\nNotes: Initiates reset flow via email."
+        },
+        {
+          "name": "Email verification — verify via code/token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/verify-email",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"oneTimeCode\": 123456\n}"
+            },
+            "description": "Verify email using OTP or token.\n\nAuthentication: Public.\nRequest Body: email (string), oneTimeCode (number) or token (string).\nSuccess 200: Email marked verified; user can log in normally."
+          },
+          "response": [],
+          "description": "Purpose: Email verification — code/token verify\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/verify-email\nNotes: Provide email and OTP or token."
+        },
+        {
+          "name": "Password reset — set new password with valid token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/reset-password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "reset-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<reset-token>\",\n  \"newPassword\": \"NewSecurePass123!\"\n}"
+            },
+            "description": "Reset password using a valid reset token.\n\nAuthentication: Public (token-based).\nRequest Body:\n- token (string, required)\n- newPassword (string, required)\nSuccess 200: Password updated; old tokens become invalid."
+          },
+          "response": [],
+          "description": "Purpose: Password reset — set new password\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/reset-password\nNotes: Use valid reset token."
+        },
+        {
+          "name": "Change password — authenticated user provides old/new password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/change-password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "change-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"OldPass123!\",\n  \"newPassword\": \"NewSecurePass123!\"\n}"
+            },
+            "description": "Change current user password.\n\nAuthentication: Bearer token required.\nRequest Body:\n- oldPassword (string)\n- newPassword (string, must meet security rules)\nSuccess 200: Password changed; re‑authenticate recommended."
+          },
+          "response": [],
+          "description": "Purpose: Change password — authenticated\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/change-password\nNotes: Requires auth; provide old/new passwords."
+        },
+        {
+          "name": "Resend verification email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/resend-verify-email",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "resend-verify-email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "description": "Resend email verification message.\n\nAuthentication: Public.\nRequest Body: email (string).\nSuccess 200: Verification email queued if account needs verification."
+          },
+          "response": [],
+          "description": "Purpose: Resend verification email\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/resend-verify-email\nNotes: Resends verification email."
+        },
+        {
+          "name": "Refresh token — renew access token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/auth/refresh-token",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"<refresh-token>\"\n}"
+            },
+            "description": "Exchange refresh token for a new access token.\n\nAuthentication: Refresh token (cookie/body).\nSuccess 200: Returns fresh accessToken.\nNotes: If refresh token is invalid/expired, returns 401."
+          },
+          "response": [],
+          "description": "Purpose: Refresh token — renew access token\nMethod: POST\nURL: {{BASE_URL}}/api/v1/auth/refresh-token\nNotes: Uses refresh token (cookie/body)."
+        }
+      ]
+    },
+    {
+      "name": "User Module",
+      "description": "User profile and admin user management endpoints.",
+      "item": [
+        {
+          "name": "Create new user — validation + rate limit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "description": "Register a new user account.\n\nAuthentication: Public.\nRequest Body: name, email, password.\nValidation: Email uniqueness; password strength policy.\nRate limiting: Enabled to prevent abuse.\nSuccess 201: Returns created user (without password)."
+          },
+          "response": [],
+          "description": "Purpose: Create user\nMethod: POST\nURL: {{BASE_URL}}/api/v1/user/\nNotes: Validates payload; rate limited."
+        },
+        {
+          "name": "Fetch own profile details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/profile",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "profile"
+              ]
+            },
+            "description": "Get the currently authenticated user’s profile.\n\nAuthentication: Bearer token required (any role).\nSuccess 200: Returns user details and settings."
+          },
+          "response": [],
+          "description": "Purpose: Get user profile\nMethod: GET\nURL: {{BASE_URL}}/api/v1/user/profile\nNotes: Requires auth; returns current user."
+        },
+        {
+          "name": "Update own profile — file upload + validation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data",
+                "type": "text"
+              }
+            ],
+          "url": {
+            "raw": "{{BASE_URL}}/api/v1/user/profile",
+            "host": [
+              "{{BASE_URL}}"
+            ],
+            "path": [
+              "api",
+              "v1",
+              "user",
+              "profile"
+            ]
+          },
+          "body": {
+            "mode": "formdata",
+            "formdata": [
+              { "key": "name", "value": "John Doe", "type": "text" },
+              { "key": "phone", "value": "+1-202-555-0198", "type": "text" },
+              { "key": "preferences", "value": "{\"theme\":\"dark\"}", "type": "text" },
+              { "key": "avatar", "type": "file", "src": "" }
+            ]
+          },
+          "description": "Update current user profile and optional file uploads.\n\nAuthentication: Bearer token required.\nContent‑Type: multipart/form‑data (for files).\nEditable fields may include name, avatar, preferences.\nSuccess 200: Returns updated user."
+        },
+          "response": [],
+          "description": "Purpose: Update user profile\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/user/profile\nNotes: Upload fields like profilePicture; requires auth."
+        },
+        {
+          "name": "List all users — super admin only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ""
+              ]
+            },
+            "description": "List all users (admin only).\n\nAuthentication: Bearer token with SUPER_ADMIN role.\nQuery: pagination/filter may apply.\nSuccess 200: Paginated list of users."
+          },
+          "response": [],
+          "description": "Purpose: List users (admin)\nMethod: GET\nURL: {{BASE_URL}}/api/v1/user/\nNotes: Requires SUPER_ADMIN role."
+        },
+        {
+          "name": "Block user — super admin",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/:id/block",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ":id",
+                "block"
+              ]
+            },
+            "description": "Block a user by ID (admin).\n\nAuthentication: SUPER_ADMIN required.\nPath: :id — target user ID.\nSuccess 200: User status set to blocked; access revoked."
+          },
+          "response": [],
+          "description": "Purpose: Block user\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/user/:id/block\nNotes: Requires SUPER_ADMIN role."
+        },
+        {
+          "name": "Unblock user — super admin",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/:id/unblock",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ":id",
+                "unblock"
+              ]
+            },
+            "description": "Unblock a user by ID (admin).\n\nAuthentication: SUPER_ADMIN required.\nPath: :id — target user ID.\nSuccess 200: User status set to active."
+          },
+          "response": [],
+          "description": "Purpose: Unblock user\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/user/:id/unblock\nNotes: Requires SUPER_ADMIN role."
+        },
+        {
+          "name": "Get specific user details by ID (super admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ":id"
+              ]
+            },
+            "description": "Get a specific user by ID (admin).\n\nAuthentication: SUPER_ADMIN required.\nPath: :id — target user ID.\nSuccess 200: Returns user details."
+          },
+          "response": [],
+          "description": "Purpose: Get user by ID\nMethod: GET\nURL: {{BASE_URL}}/api/v1/user/:id\nNotes: Requires SUPER_ADMIN role."
+        },
+        {
+          "name": "Public user details (guest allowed) — rate limited",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/user/:id/user",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                ":id",
+                "user"
+              ]
+            },
+            "description": "Fetch public‑safe details for a user by ID.\n\nAuthentication: Guest allowed.\nPath: :id — target user ID.\nRate limiting: Enabled.\nSuccess 200: Returns non‑sensitive profile fields."
+          },
+          "response": [],
+          "description": "Purpose: Public user details\nMethod: GET\nURL: {{BASE_URL}}/api/v1/user/:id/user\nNotes: Guest access; rate limited."
+        }
+      ]
+    },
+    {
+      "name": "Doctor Module",
+      "description": "Doctor management for admin.",
+      "item": [
+        {
+          "name": "Create doctor (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/doctors/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Strange\",\n  \"email\": \"doctor@example.com\",\n  \"phone\": \"+1-202-555-0123\",\n  \"specialty\": \"Surgery\",\n  \"licenseNo\": \"LIC-987654\",\n  \"experienceYears\": 8\n}"
+            },
+            "description": "Purpose: Create doctor\nMethod: POST\nURL: {{BASE_URL}}/api/v1/doctors/\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Create doctor\nMethod: POST\nURL: {{BASE_URL}}/api/v1/doctors/\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "List/search doctors (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/doctors/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                ""
+              ]
+            },
+            "description": "Purpose: List doctors\nMethod: GET\nURL: {{BASE_URL}}/api/v1/doctors/\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: List doctors\nMethod: GET\nURL: {{BASE_URL}}/api/v1/doctors/\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Block doctor (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/doctors/:id/block",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                ":id",
+                "block"
+              ]
+            },
+            "description": "Purpose: Block doctor\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/doctors/:id/block\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Block doctor\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/doctors/:id/block\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Unblock doctor (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/doctors/:id/unblock",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                ":id",
+                "unblock"
+              ]
+            },
+            "description": "Purpose: Unblock doctor\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/doctors/:id/unblock\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Unblock doctor\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/doctors/:id/unblock\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Delete doctor (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/doctors/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                ":id"
+              ]
+            },
+            "description": "Purpose: Delete doctor\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/doctors/:id\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Delete doctor\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/doctors/:id\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Update doctor (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/doctors/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"Cardiology\",\n  \"phone\": \"+1-202-555-0147\"\n}"
+            },
+            "description": "Purpose: Update doctor\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/doctors/:id\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Update doctor\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/doctors/:id\nNotes: SUPER_ADMIN only."
+        }
+      ]
+    },
+    {
+      "name": "Admin Module",
+      "description": "Admin dashboard stats and counts.",
+      "item": [
+        {
+          "name": "Dashboard stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/dashboard/stats",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "stats"
+              ]
+            },
+            "description": "Purpose: Admin dashboard stats\nMethod: GET\nURL: {{BASE_URL}}/api/v1/dashboard/stats\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Admin dashboard stats\nMethod: GET\nURL: {{BASE_URL}}/api/v1/dashboard/stats\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Dashboard counts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/dashboard/counts",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "counts"
+              ]
+            },
+            "description": "Purpose: Admin dashboard counts\nMethod: GET\nURL: {{BASE_URL}}/api/v1/dashboard/counts\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Admin dashboard counts\nMethod: GET\nURL: {{BASE_URL}}/api/v1/dashboard/counts\nNotes: SUPER_ADMIN only."
+        }
+      ]
+    },
+    {
+      "name": "Event Module",
+      "description": "Personal events: create, list, detail, update, delete.",
+      "item": [
+        {
+          "name": "Create event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/events/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Surgery\",\n  \"date\": \"2024-02-10\",\n  \"location\": \"OR-1\"\n}"
+            },
+            "description": "Purpose: Create event\nMethod: POST\nURL: {{BASE_URL}}/api/v1/events/\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: Create event\nMethod: POST\nURL: {{BASE_URL}}/api/v1/events/\nNotes: Auth required."
+        },
+        {
+          "name": "List my events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/events/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                ""
+              ]
+            },
+            "description": "Purpose: List my events\nMethod: GET\nURL: {{BASE_URL}}/api/v1/events/\nNotes: Auth required; supports filters."
+          },
+          "response": [],
+          "description": "Purpose: List my events\nMethod: GET\nURL: {{BASE_URL}}/api/v1/events/\nNotes: Auth required; supports filters."
+        },
+        {
+          "name": "Event details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/events/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                ":id"
+              ]
+            },
+            "description": "Purpose: Get event by ID\nMethod: GET\nURL: {{BASE_URL}}/api/v1/events/:id\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: Get event by ID\nMethod: GET\nURL: {{BASE_URL}}/api/v1/events/:id\nNotes: Auth required."
+        },
+        {
+          "name": "Update event",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/events/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Title\"\n}"
+            },
+            "description": "Purpose: Update event\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/events/:id\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: Update event\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/events/:id\nNotes: Auth required."
+        },
+        {
+          "name": "Delete event",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/events/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                ":id"
+              ]
+            },
+            "description": "Purpose: Delete event\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/events/:id\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: Delete event\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/events/:id\nNotes: Auth required."
+        }
+      ]
+    },
+    {
+      "name": "Preference Card Module",
+      "description": "Preference cards: CRUD, publish, and AI helpers.",
+      "item": [
+        {
+          "name": "Create preference card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"surgeon\": \"Dr. X\",\n  \"procedure\": \"Appendectomy\"\n}"
+            },
+            "description": "Purpose: Create card\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: Create card\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/\nNotes: Auth required."
+        },
+        {
+          "name": "List my cards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                ""
+              ]
+            },
+            "description": "Purpose: List my cards\nMethod: GET\nURL: {{BASE_URL}}/api/v1/preference-card/\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: List my cards\nMethod: GET\nURL: {{BASE_URL}}/api/v1/preference-card/\nNotes: Auth required."
+        },
+        {
+          "name": "Admin list all cards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/admin",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                "admin"
+              ]
+            },
+            "description": "Purpose: Admin list all cards\nMethod: GET\nURL: {{BASE_URL}}/api/v1/preference-card/admin\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Admin list all cards\nMethod: GET\nURL: {{BASE_URL}}/api/v1/preference-card/admin\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Card details by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                ":id"
+              ]
+            },
+            "description": "Purpose: Get card by ID\nMethod: GET\nURL: {{BASE_URL}}/api/v1/preference-card/:id\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: Get card by ID\nMethod: GET\nURL: {{BASE_URL}}/api/v1/preference-card/:id\nNotes: Auth required."
+        },
+        {
+          "name": "Update card",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated notes\"\n}"
+            },
+            "description": "Purpose: Update card\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/preference-card/:id\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: Update card\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/preference-card/:id\nNotes: Auth required."
+        },
+        {
+          "name": "Delete card",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/:id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                ":id"
+              ]
+            },
+            "description": "Purpose: Delete card\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/preference-card/:id\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: Delete card\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/preference-card/:id\nNotes: Auth required."
+        },
+        {
+          "name": "Publish/unpublish card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/:id/publish",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                ":id",
+                "publish"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publish\": true\n}"
+            },
+            "description": "Purpose: Publish/unpublish\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/:id/publish\nNotes: Auth required; send publish boolean."
+          },
+          "response": [],
+          "description": "Purpose: Publish/unpublish\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/:id/publish\nNotes: Auth required; send publish boolean."
+        },
+        {
+          "name": "Generate preference card (AI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/generate/preference-card",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                "generate",
+                "preference-card"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"surgeon\": \"Dr. X\",\n  \"procedure\": \"Appendectomy\",\n  \"sections\": []\n}"
+            },
+            "description": "Purpose: Generate card via AI\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/generate/preference-card\nNotes: Provide surgeon/procedure/sections."
+          },
+          "response": [],
+          "description": "Purpose: Generate card via AI\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/generate/preference-card\nNotes: Provide surgeon/procedure/sections."
+        },
+        {
+          "name": "Supply suggestions (AI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/suggest/supplies",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                "suggest",
+                "supplies"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"procedure\": \"Appendectomy\",\n  \"specialty\": \"Surgery\"\n}"
+            },
+            "description": "Purpose: Suggest supplies via AI\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/suggest/supplies\nNotes: Provide procedure/specialty."
+          },
+          "response": [],
+          "description": "Purpose: Suggest supplies via AI\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/suggest/supplies\nNotes: Provide procedure/specialty."
+        },
+        {
+          "name": "Event summary (AI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/preference-card/summarize/event/:id?",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "preference-card",
+                "summarize",
+                "event",
+                ":id?"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Event notes\"\n}"
+            },
+            "description": "Purpose: Summarize event via AI\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/summarize/event/:id?\nNotes: Provide ID or body for summary."
+          },
+          "response": [],
+          "description": "Purpose: Summarize event via AI\nMethod: POST\nURL: {{BASE_URL}}/api/v1/preference-card/summarize/event/:id?\nNotes: Provide ID or body for summary."
+        }
+      ]
+    },
+    {
+      "name": "Notification Module",
+      "description": "User and admin notifications.",
+      "item": [
+        {
+          "name": "Notification list + unread count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                ""
+              ]
+            },
+            "description": "Purpose: List notifications\nMethod: GET\nURL: {{BASE_URL}}/api/v1/notifications/\nNotes: POSTER/TASKER roles."
+          },
+          "response": [],
+          "description": "Purpose: List notifications\nMethod: GET\nURL: {{BASE_URL}}/api/v1/notifications/\nNotes: POSTER/TASKER roles."
+        },
+        {
+          "name": "Mark notification as read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/:id/read",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                ":id",
+                "read"
+              ]
+            },
+            "description": "Purpose: Read notification\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/:id/read\nNotes: POSTER/TASKER roles."
+          },
+          "response": [],
+          "description": "Purpose: Read notification\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/:id/read\nNotes: POSTER/TASKER roles."
+        },
+        {
+          "name": "Mark all notifications as read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/read-all",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": "Purpose: Read all notifications\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/read-all\nNotes: POSTER/TASKER roles."
+          },
+          "response": [],
+          "description": "Purpose: Read all notifications\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/read-all\nNotes: POSTER/TASKER roles."
+        },
+        {
+          "name": "Admin notifications list + unread",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/admin",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin"
+              ]
+            },
+            "description": "Purpose: Admin notifications\nMethod: GET\nURL: {{BASE_URL}}/api/v1/notifications/admin\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Admin notifications\nMethod: GET\nURL: {{BASE_URL}}/api/v1/notifications/admin\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Admin mark specific notification read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/admin/:id/read",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                ":id",
+                "read"
+              ]
+            },
+            "description": "Purpose: Admin read notification\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/admin/:id/read\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Admin read notification\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/admin/:id/read\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Admin mark all notifications read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/notifications/admin/read-all",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "read-all"
+              ]
+            },
+            "description": "Purpose: Admin read all\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/admin/read-all\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Admin read all\nMethod: PATCH\nURL: {{BASE_URL}}/api/v1/notifications/admin/read-all\nNotes: SUPER_ADMIN only."
+        }
+      ]
+    },
+    {
+      "name": "Payment Module",
+      "description": "Payments, Stripe Connect, refunds, stats, and webhook.",
+      "item": [
+        {
+          "name": "Stripe webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/webhook",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "webhook"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_123\",\n  \"type\": \"payment_intent.succeeded\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_123\",\n      \"amount\": 5000,\n      \"currency\": \"usd\",\n      \"status\": \"succeeded\"\n    }\n  }\n}"
+            },
+            "description": "Purpose: Stripe webhook\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/webhook\nNotes: No auth; raw body required."
+          },
+          "response": [],
+          "description": "Purpose: Stripe webhook\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/webhook\nNotes: No auth; raw body required."
+        },
+        {
+          "name": "Create/manage Stripe Connect account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/stripe/account",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "stripe",
+                "account"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"country\": \"US\",\n  \"businessType\": \"individual\"\n}"
+            },
+            "description": "Purpose: Stripe account\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/stripe/account\nNotes: TASKER role required."
+          },
+          "response": [],
+          "description": "Purpose: Stripe account\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/stripe/account\nNotes: TASKER role required."
+        },
+        {
+          "name": "Stripe onboarding link",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/stripe/onboarding",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "stripe",
+                "onboarding"
+              ]
+            },
+            "description": "Purpose: Onboarding link\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stripe/onboarding\nNotes: TASKER/SUPER_ADMIN roles."
+          },
+          "response": [],
+          "description": "Purpose: Onboarding link\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stripe/onboarding\nNotes: TASKER/SUPER_ADMIN roles."
+        },
+        {
+          "name": "Check Stripe onboarding status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/stripe/onboarding-status",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "stripe",
+                "onboarding-status"
+              ]
+            },
+            "description": "Purpose: Onboarding status\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stripe/onboarding-status\nNotes: POSTER/TASKER/SUPER_ADMIN roles."
+          },
+          "response": [],
+          "description": "Purpose: Onboarding status\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stripe/onboarding-status\nNotes: POSTER/TASKER/SUPER_ADMIN roles."
+        },
+        {
+          "name": "Payment history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/history",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "history"
+              ]
+            },
+            "description": "Purpose: Payment history\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/history\nNotes: POSTER/TASKER/SUPER_ADMIN roles."
+          },
+          "response": [],
+          "description": "Purpose: Payment history\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/history\nNotes: POSTER/TASKER/SUPER_ADMIN roles."
+        },
+        {
+          "name": "Get current PaymentIntent by bidId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/by-bid/:bidId/current-intent",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "by-bid",
+                ":bidId",
+                "current-intent"
+              ]
+            },
+            "description": "Purpose: Current PaymentIntent\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/by-bid/:bidId/current-intent\nNotes: POSTER/TASKER/SUPER_ADMIN roles."
+          },
+          "response": [],
+          "description": "Purpose: Current PaymentIntent\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/by-bid/:bidId/current-intent\nNotes: POSTER/TASKER/SUPER_ADMIN roles."
+        },
+        {
+          "name": "Refund payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/refund/:paymentId",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "refund",
+                ":paymentId"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000,\n  \"reason\": \"requested_by_customer\"\n}"
+            },
+            "description": "Purpose: Refund payment\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/refund/:paymentId\nNotes: POSTER/SUPER_ADMIN roles."
+          },
+          "response": [],
+          "description": "Purpose: Refund payment\nMethod: POST\nURL: {{BASE_URL}}/api/v1/payments/refund/:paymentId\nNotes: POSTER/SUPER_ADMIN roles."
+        },
+        {
+          "name": "Specific payment details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/:paymentId",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                ":paymentId"
+              ]
+            },
+            "description": "Purpose: Payment details\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/:paymentId\nNotes: Role-based access."
+          },
+          "response": [],
+          "description": "Purpose: Payment details\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/:paymentId\nNotes: Role-based access."
+        },
+        {
+          "name": "All payments list (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                ""
+              ]
+            },
+            "description": "Purpose: List payments\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: List payments\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Payment stats (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/stats",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "stats"
+              ]
+            },
+            "description": "Purpose: Payment stats\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stats\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Payment stats\nMethod: GET\nURL: {{BASE_URL}}/api/v1/payments/stats\nNotes: SUPER_ADMIN only."
+        },
+        {
+          "name": "Delete Stripe account (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/payments/account/:accountId",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "account",
+                ":accountId"
+              ]
+            },
+            "description": "Purpose: Delete Stripe account\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/payments/account/:accountId\nNotes: SUPER_ADMIN only."
+          },
+          "response": [],
+          "description": "Purpose: Delete Stripe account\nMethod: DELETE\nURL: {{BASE_URL}}/api/v1/payments/account/:accountId\nNotes: SUPER_ADMIN only."
+        }
+      ]
+    },
+    {
+      "name": "Subscription Module",
+      "description": "User subscriptions: status, checkout, portal, choose free.",
+      "item": [
+        {
+          "name": "My subscription status/plan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/subscription/me",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscription",
+                "me"
+              ]
+            },
+            "description": "Purpose: My subscription status\nMethod: GET\nURL: {{BASE_URL}}/api/v1/subscription/me\nNotes: Auth required."
+          },
+          "response": [],
+          "description": "Purpose: My subscription status\nMethod: GET\nURL: {{BASE_URL}}/api/v1/subscription/me\nNotes: Auth required."
+        },
+        {
+          "name": "Subscription checkout (Stripe)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/subscription/checkout",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscription",
+                "checkout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"price_123\"\n}"
+            },
+            "description": "Purpose: Create Stripe checkout session\nMethod: POST\nURL: {{BASE_URL}}/api/v1/subscription/checkout\nNotes: Returns redirect URL."
+          },
+          "response": [],
+          "description": "Purpose: Create Stripe checkout session\nMethod: POST\nURL: {{BASE_URL}}/api/v1/subscription/checkout\nNotes: Returns redirect URL."
+        },
+        {
+          "name": "Billing portal session (Stripe)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/subscription/portal",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscription",
+                "portal"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "description": "Purpose: Create billing portal session\nMethod: POST\nURL: {{BASE_URL}}/api/v1/subscription/portal\nNotes: Manage subscription/payment method."
+          },
+          "response": [],
+          "description": "Purpose: Create billing portal session\nMethod: POST\nURL: {{BASE_URL}}/api/v1/subscription/portal\nNotes: Manage subscription/payment method."
+        },
+        {
+          "name": "Choose free plan (local)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/v1/subscription/choose/free",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscription",
+                "choose",
+                "free"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "description": "Purpose: Switch to Free plan locally\nMethod: POST\nURL: {{BASE_URL}}/api/v1/subscription/choose/free\nNotes: No Stripe subscription created."
+          },
+          "response": [],
+          "description": "Purpose: Switch to Free plan locally\nMethod: POST\nURL: {{BASE_URL}}/api/v1/subscription/choose/free\nNotes: No Stripe subscription created."
+        }
+      ]
+    }
+  ]
+}

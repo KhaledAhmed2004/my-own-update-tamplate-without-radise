@@ -12,13 +12,7 @@ const auth =
     try {
       const authHeader = req.headers.authorization;
 
-      // 1️⃣ Allow GUEST access if route permits it and no token is provided
-      if (!authHeader && allowedRoles.includes(USER_ROLES.GUEST)) {
-        req.user = { role: USER_ROLES.GUEST, id: null, email: null };
-        return next();
-      }
-
-      // 2️⃣ No token provided and route doesn't allow guests
+      // 1️⃣ No token provided — require authentication for all protected routes
       if (!authHeader) {
         throw new ApiError(
           StatusCodes.UNAUTHORIZED,
@@ -53,7 +47,7 @@ const auth =
       // 6️⃣ Attach verified user to request
       req.user = verifiedUser;
 
-      // 7️⃣ Role-based access check
+      // 7️⃣ Role-based access check — SUPER_ADMIN-only system
       if (allowedRoles.length && !allowedRoles.includes(verifiedUser.role)) {
         throw new ApiError(
           StatusCodes.FORBIDDEN,
